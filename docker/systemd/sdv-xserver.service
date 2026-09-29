@@ -1,0 +1,43 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Headless X server for the whole desktop stack.
+#
+# Xtigervnc rather than Xvfb: we need RandR resizing at runtime so Selkies can
+# make the framebuffer follow the browser window. Nothing connects over the VNC
+# protocol - "-localhost yes -SecurityTypes None" with no client is simply how a
+# resizable headless framebuffer is obtained.
+#
+# No [Install] section on purpose: activation comes from sdv-desktop.target.
+
+[Unit]
+Description=SDV headless X server (Xtigervnc on :0)
+Requires=user@1000.service
+After=systemd-user-sessions.service user@1000.service user-setup.service
+Wants=user-setup.service
+
+[Service]
+Type=simple
+User=user
+PAMName=systemd-user
+Environment=DISPLAY=:0
+Environment=LANG=en_US.UTF-8
+# A container restart can leave these behind and Xtigervnc then refuses :0.
+ExecStartPre=-/bin/rm -f /tmp/.X11-unix/X0 /tmp/.X0-lock /home/user/.Xauthority
+ExecStart=/usr/bin/Xtigervnc :0 -geometry 1920x1080 -depth 24 -localhost yes -SecurityTypes None -ac -AlwaysShared
+# Hold the unit "starting" until the socket exists, so the units ordered after
+# this one never race the X server.
+ExecStartPost=/bin/bash -c 'until [[ -S /tmp/.X11-unix/X0 ]]; do sleep 0.05; done'
+Restart=always
+RestartSec=2

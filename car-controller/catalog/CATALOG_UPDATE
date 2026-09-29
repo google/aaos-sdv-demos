@@ -1,0 +1,7 @@
+# proto-file: //system/software_defined_vehicle/tools/regenerator/proto/catalog.proto
+# proto-message: Catalog
+
+output_path: ".."
+dependency_catalog_paths: "../../../samples/vhal_proxy/catalog/"
+dependency_catalog_paths: "../../../samples/some_ip/catalog"
+dependency_catalog_paths: "../../../../../packages/services/display_safety/service/vehicledata/sdv_vehicledata_catalog_v1"

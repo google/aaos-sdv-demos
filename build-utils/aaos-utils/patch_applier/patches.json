@@ -1,0 +1,44 @@
+[
+  {
+    "repo_path": "device/google/sdv",
+    "patch_filename": "patches/device_google_sdv.patch",
+    "description": "Add carla client as service, car controller SB",
+    "tag": "base",
+    "patch_ordering": 0
+  },
+  {
+    "repo_path": "device/google/sdv",
+    "patch_filename": "patches/sdv_device_add_default_gateway.patch",
+    "description": "Add default route to sdv-media, for sdv-nexus connection",
+    "tag": "sdv-nexus",
+    "patch_ordering": 1
+  },
+  {
+    "repo_path": "packages/services/display_safety",
+    "patch_filename": "patches/packages_services_display_safety.patch",
+    "description": "Base DS patch. Add carla signal, add start someip by default, disable DS demo sequence",
+    "tag": "base",
+    "patch_ordering": 0
+  },
+  {
+    "repo_path": "system/software_defined_vehicle/vsidl",
+    "patch_filename": "patches/system_software_defined_vehicle_vsidl.patch",
+    "description": "vsidlc fix, disable over restrictive rules",
+    "tag": "base",
+    "patch_ordering": 0
+  },
+  {
+    "repo_path": "system/software_defined_vehicle/vsidl",
+    "patch_filename": "patches/system_software_defined_vehicle_vsidl_apex_key.patch",
+    "description": "vsidlc apex key fix, use com.android.sdv.samples.key",
+    "tag": "base",
+    "patch_ordering": 1
+  },
+  {
+    "repo_path": "system/software_defined_vehicle/samples",
+    "patch_filename": "patches/system_software_defined_vehicle_samples.patch",
+    "description": "base sample changes, add car controller, tweak signals",
+    "tag": "base",
+    "patch_ordering": 0
+  }
+]

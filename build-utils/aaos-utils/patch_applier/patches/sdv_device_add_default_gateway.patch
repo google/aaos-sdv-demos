@@ -1,0 +1,23 @@
+diff --git a/sdv_cf/ethernet/ethernet.sdv_cf.sh b/sdv_cf/ethernet/ethernet.sdv_cf.sh
+index cdb5ef8..d7c64fc 100644
+--- a/sdv_cf/ethernet/ethernet.sdv_cf.sh
++++ b/sdv_cf/ethernet/ethernet.sdv_cf.sh
+@@ -26,6 +26,7 @@ echo Setting IP address for eth1: $IP > /dev/kmsg
+ ip addr add "$IP/24" dev eth1
+ ip route add 224.0.0.0/4 dev eth1
+ ip link set eth1 up
++ip route replace default via 192.168.98.1 dev eth1
+ 
+ # On non-IVI targets, eth1 is only used by SDV RPC, Service Discovery and Data tunnel have their
+ # own network interfaces.
+diff --git a/sdv_ivi_cf/ethernet/ethernet.sdv_ivi_cf.sh b/sdv_ivi_cf/ethernet/ethernet.sdv_ivi_cf.sh
+index 0c3bde9..115d6f4 100644
+--- a/sdv_ivi_cf/ethernet/ethernet.sdv_ivi_cf.sh
++++ b/sdv_ivi_cf/ethernet/ethernet.sdv_ivi_cf.sh
+@@ -25,5 +25,6 @@ echo Setting IP address for eth1: $IP > /dev/kmsg
+ ip link set eth1 up
+ ip addr add "$IP/24" brd + dev eth1
+ ip route add 224.0.0.0/4 dev eth1
++ip route replace default via 192.168.98.1 dev eth1
+ 
+ echo "sdv-ethernet-setup has started successfully"

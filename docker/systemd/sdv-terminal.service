@@ -1,0 +1,43 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# The terminal the user lands on, ready for `launch_carla`.
+#
+# Restart=no and Type=oneshot: gnome-terminal is a thin D-Bus client that returns
+# as soon as the window is open, and if the user closes the window it should stay
+# closed.
+#
+# No [Install] section on purpose: activation comes from sdv-desktop.target.
+
+[Unit]
+Description=SDV initial terminal window
+Requires=sdv-openbox.service
+After=sdv-openbox.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=user
+WorkingDirectory=/home/user
+PAMName=systemd-user
+Environment=DISPLAY=:0
+Environment=LANG=en_US.UTF-8
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+# gnome-terminal-server is D-Bus activated and inherits the *activation*
+# environment, not this unit's. Without exporting DISPLAY into it the server
+# starts with no display and the client fails.
+ExecStartPre=-/usr/bin/dbus-update-activation-environment --systemd DISPLAY XDG_RUNTIME_DIR
+ExecStart=/usr/bin/gnome-terminal --geometry=110x32+60+60 --title="SDV Terminal (Run: launch_carla)"
+Restart=no

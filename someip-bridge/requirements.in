@@ -1,0 +1,7 @@
+carla==0.9.15
+numpy==1.18.4
+pip==23.1.2
+pygame==2.6.1
+setuptools==47.1.0
+someipy==1.0.0
+typing-extensions==4.7.1

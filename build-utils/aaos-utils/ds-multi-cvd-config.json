@@ -1,0 +1,72 @@
+{
+  "common": {
+    "host_package": "/home/user/Workspace/aaos-26q2/out/host/linux-x86"
+  },
+  "instances": [
+    {
+      "name": "vm0",
+      "disk": {
+        "default_build": "/home/user/Workspace/aaos-26q2/out/target/product/sdv_har_cf"
+      },
+      "boot": {
+        "extra_bootconfig_args": "androidboot.sdv.instance_name=instance1 androidboot.virt.address=3 androidboot.sdv.boot_mode=unlocked androidboot.sdv.someip.enable=true"
+      },
+      "vm": {
+        "cpus": 4,
+        "memory_mb": 4096
+      },
+      "security": {
+        "guest_enforce_security": "false"
+      },
+      "graphics": {
+        "gpu_mode": "gfxstream_guest_angle_host_swiftshader",
+        "displays": [
+          {
+            "width": 1920,
+            "height": 720,
+            "dpi": 160
+          }
+        ]
+      }
+    },
+    {
+      "@import": "auto",
+      "name": "vm1",
+      "disk": {
+        "default_build": "/home/user/Workspace/aaos-26q2/out/target/product/sdv_ivi_cf"
+      },
+      "boot": {
+        "extra_bootconfig_args": "androidboot.sdv.instance_name=instance2 androidboot.virt.address=4 androidboot.sdv.boot_mode=unlocked"
+      },
+      "vm": {
+        "setupwizard_mode": "OPTIONAL",
+        "cpus": 4,
+        "memory_mb": 8192
+      },
+      "security": {
+        "guest_enforce_security": "false"
+      },
+      "graphics": {
+        "gpu_mode": "gfxstream",
+        "displays": [
+          {
+            "width": 1920,
+            "height": 1080,
+            "dpi": 160
+          },
+          {
+            "width": 1920,
+            "height": 720,
+            "dpi": 160,
+            "overlays": [
+              {
+                "vm_index": 0,
+                "display_index": 0
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

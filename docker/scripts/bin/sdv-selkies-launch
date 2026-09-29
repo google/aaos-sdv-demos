@@ -1,0 +1,42 @@
+#!/bin/bash
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# ==============================================================================
+# Selkies launcher for sdv-selkies.service.
+#
+# Exists only to make the encoder choice at runtime: the image replaces Selkies'
+# bundled GPLv2 libx264 with a no-op stub, so there is no software H.264 path.
+# Without an NVIDIA device, h264enc would fall through to that stub and stream a
+# black screen, so fall back to the CPU-striped JPEG encoder instead.
+# ==============================================================================
+
+set -euo pipefail
+
+encoder="h264enc"
+if [[ ! -e /dev/nvidia0 ]]; then
+  encoder="jpeg"
+  echo "WARNING: /dev/nvidia0 absent - no NVENC. Falling back to the jpeg encoder;" \
+    "h264enc would resolve to the libx264 no-op stub and produce a black screen." >&2
+fi
+echo "Starting Selkies with encoder=${encoder}"
+
+exec /usr/bin/selkies \
+  --addr=127.0.0.1 \
+  --port=8081 \
+  --subfolder=/selkies \
+  --enable-basic-auth=false \
+  --enable-dual-mode=false \
+  --audio-enabled=false \
+  --encoder="${encoder}"

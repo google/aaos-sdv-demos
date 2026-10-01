@@ -13,7 +13,7 @@
 # limitations under the License.
 
 variable "CICD_FOUNDATION_REF" {
-  default = "6e656b5cd6f9c72a7b0d19ec8eaf489437d7be99"
+  default = "f0d812c63ed57e5154d5e4f40e93be95e5882f73"
 }
 
 variable "CICD_WORKSTATIONS_DIR" {

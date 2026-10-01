@@ -96,6 +96,6 @@ target "sdv-demos" {
     "type=registry,ref=${CACHE_REPO}:latest"
   ]
   cache-to = [
-    "type=registry,ref=${CACHE_REPO}:latest,mode=min"
+    "type=registry,ref=${CACHE_REPO}:latest,mode=max"
   ]
 }

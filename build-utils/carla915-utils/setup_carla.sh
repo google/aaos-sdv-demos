@@ -23,7 +23,7 @@ MAPS_URL="${MAPS_URL:-https://downloads.carlasim.com/Linux/AdditionalMaps_${CARL
 INSTALL_DIR="${INSTALL_DIR:-$HOME/Workspace/carla-installation}"
 ARCHIVE_NAME="CARLA_${CARLA_VERSION}.tar.gz"
 MAPS_FILENAME="AdditionalMaps_${CARLA_VERSION}.tar.gz"
-ASSUME_YES=false
+SKIP_LICENSE_AGREEMENT=false
 
 # Colors
 GREEN='\033[0;32m'
@@ -35,8 +35,8 @@ warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    -y | --yes)
-      ASSUME_YES=true
+    --skip-license-agreement | -y | --yes)
+      SKIP_LICENSE_AGREEMENT=true
       shift
       ;;
     --install-dir=*)
@@ -44,9 +44,9 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     -h | --help)
-      echo "Usage: $(basename "$0") [-y|--yes] [--install-dir=<path>]"
-      echo "  --install-dir=<path>  Target directory for CARLA binaries (default: ~/Workspace/carla-installation)"
-      echo "  -y, --yes             Non-interactive mode (assume yes to prompts)"
+      echo "Usage: $(basename "$0") [--skip-license-agreement|-y|--yes] [--install-dir=<path>]"
+      echo "  --install-dir=<path>       Target directory for CARLA binaries (default: ~/Workspace/carla-installation)"
+      echo "  --skip-license-agreement   Skip interactive Unreal Engine EULA prompt (-y, --yes alias)"
       exit 0
       ;;
     *)
@@ -55,18 +55,25 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+if [[ "${DEMO_BUILD_PREINSTALL_CARLA:-}" == "false" ]]; then
+  log "DEMO_BUILD_PREINSTALL_CARLA is 'false'. Skipping CARLA installation."
+  exit 0
+elif [[ "${DEMO_BUILD_PREINSTALL_CARLA:-}" != "true" ]]; then
+  warn "DEMO_BUILD_PREINSTALL_CARLA is not set to 'true' or 'false' (current value: '${DEMO_BUILD_PREINSTALL_CARLA:-<unset>}'). Proceeding with CARLA installation..."
+fi
+
 ## 1. User Confirmation Prompt
 echo -e "${YELLOW}--- CARLA & Extra Maps Installation Plan ---${NC}"
 echo -e "CARLA Version   : ${CARLA_VERSION}"
 echo -e "Target Directory: ${INSTALL_DIR}"
 echo ""
 
-if [ "$ASSUME_YES" != true ]; then
-  read -p "Do you want to proceed with this installation? (y/N): " -n 1 -r
+if [ "$SKIP_LICENSE_AGREEMENT" != true ]; then
+  read -p "Required for installation: Do you accept Unreal Engine's EULA? (https://www.unrealengine.com/eula/unreal) (Y/n) " -n 1 -r
   echo
-  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    log "Installation aborted by user."
-    exit 0
+  if [[ -n "$REPLY" && ! "$REPLY" =~ ^[Yy]$ ]]; then
+    warn "Unreal Engine EULA was not accepted. Aborting installation."
+    exit 1
   fi
 fi
 

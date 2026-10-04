@@ -22,3 +22,4 @@ export DEMO_BUILD_WITH_GAS="false" # WIP
 export DEMO_BUILD_CARLA_VERSION="0.9.15"
 export DEMO_BUILD_AAOS_PATCHES="base|sdv-nexus"
 export DEMO_BUILD_CARLA_MAP="Town15"
+export DEMO_BUILD_PREINSTALL_CARLA="true"

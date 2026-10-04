@@ -95,21 +95,7 @@ RUN curl -fsSL -o /tmp/selkies.deb "${SELKIES_DEB_URL}" && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# 1c. Replace the GPLv2 libx264 software fallback bundled in Selkies' pixelflux.libs
-# with an Apache-2.0 no-op stub (we exclusively use NVENC).
-#
-# The stub must EXPORT the x264 symbols rather than be an empty library: pixelflux
-# has a hard DT_NEEDED dependency on libx264, so deleting it breaks `import pixelflux`
-# outright, even on NVENC-capable hosts.
-COPY --chmod=644 docker/stubs/libx264_noop_stub.c /tmp/libx264_noop_stub.c
-RUN set -e; \
-    for x264_lib in /opt/selkies/lib/python*/site-packages/pixelflux.libs/libx264-*.so.*; do \
-      gcc -shared -fPIC -O2 -Wl,-soname,"$(basename "${x264_lib}")" \
-        /tmp/libx264_noop_stub.c -o "${x264_lib}"; \
-    done && \
-    rm -f /tmp/libx264_noop_stub.c
-
-# 1d. Override the base image's Google Chrome and ASfP Studio wrappers, plus the
+# 1c. Override the base image's Google Chrome and ASfP Studio wrappers, plus the
 # Selkies launcher.
 #
 # Both base wrappers hardcode Wayland, and asfp-studio additionally calls

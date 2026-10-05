@@ -17,6 +17,9 @@
 # shellcheck disable=SC1091
 source /google/recipe/base.sh
 
+# Enable Application Default Credentials (ADC) auth for Antigravity CLI (agy)
+export AGY_ADC_AUTH="${AGY_ADC_AUTH:-true}"
+
 # CARLA Environment
 if [ -z "${CARLA_DIR:-}" ]; then
   if [ -n "${HOME:-}" ] && [ -d "${HOME}/Workspace/carla-installation" ]; then
@@ -45,8 +48,28 @@ cat /google/sdv-bashrc-hook/ascii_art
 echo "Welcome to the aaos-sdv dev env!"
 echo '"cat /google/sdv-bashrc-hook/README" to get started'
 
+# Function for installing CARLA interactively when not pre-baked
+install_carla() {
+  if [ -d "${CARLA_DIR}" ] && [ -f "${CARLA_DIR}/CarlaUE4.sh" ]; then
+    echo "[CARLA] CARLA is already installed at ${CARLA_DIR}. Skipping installation."
+    return 0
+  fi
+  DEMO_BUILD_PREINSTALL_CARLA="true" /google/carla915-utils/setup_carla.sh --install-dir="${CARLA_DIR}" "$@" || return $?
+  if [ -d "${CARLA_DIR}" ]; then
+    case ":${PATH:-}:" in
+      *":${CARLA_DIR}:"*) ;;
+      *) export PATH="${CARLA_DIR}:${PATH:-}" ;;
+    esac
+  fi
+}
+
 # Function for launching carla in a standalone terminal
 launch_carla() {
+  if [ ! -f "${CARLA_DIR}/CarlaUE4.sh" ]; then
+    echo "[CARLA] Error: CARLA is not installed at ${CARLA_DIR}."
+    echo "[CARLA] Please run 'install_carla' first to accept the Unreal Engine EULA and install CARLA."
+    return 1
+  fi
   gnome-terminal -- bash -ic 'trap exit SIGINT; /google/someip-bridge/run_carla_and_bridge.sh --mode=manual-wasd; exec bash'
 }
 

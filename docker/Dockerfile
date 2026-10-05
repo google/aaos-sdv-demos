@@ -95,13 +95,15 @@ RUN curl -fsSL -o /tmp/selkies.deb "${SELKIES_DEB_URL}" && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# 1c. Override the base image's Google Chrome and ASfP Studio wrappers, plus the
+# 1c. Override the base image's Google Chrome wrapper, remove the Wayland
+# ASfP Studio wrapper (replaced by the `asfp` bash function), and install the
 # Selkies launcher.
 #
 # Both base wrappers hardcode Wayland, and asfp-studio additionally calls
 # wait_for_monitor(), which polls org.gnome.Mutter.DisplayConfig - with GNOME
 # masked that can never succeed and costs a 60s stall on every launch.
 COPY --chmod=755 docker/scripts/bin/ /usr/local/bin/
+RUN rm -f /usr/local/bin/asfp-studio
 
 # Bypass the wrapper that assumes a wayland system.
 RUN ln -sf /usr/local/bin/google-chrome-stable /usr/local/bin/google-chrome

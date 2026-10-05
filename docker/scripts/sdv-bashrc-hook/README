@@ -6,21 +6,28 @@ To launch both:
 launch_2vm
 ```
 
-Next, launch carla simulator and someip-bridge, to feed car signals to aaos:
+Next, install and launch carla simulator and someip-bridge, to feed car signals to aaos:
 ```bash
 launch_carla
 ```
-(`?` in pygame window to see all hotkeys. `backspace` to stop autopilot, `WASD` to drive)
+NOTE: some demo environments do not come with Carla simulator pre-installed. To install:
+```bash
+install_carla
+```
+
+Carla controls:
+(`?` in pygame window to see all hotkeys. `p` to toggle autopilot, `WASD` to drive)
+(if autopilot gets stuck, `backspace` to unblock)
 
 Observe ivi and instrument cluster in browser:
 ```bash
-google-chrome-stable http://localhost:8444
+visualize_cvd
 ```
 
 2. Develop with Android Studio for Platform:
 
 ```bash
-asfp-studio &
+asfp
 ```
 
 3. Develop with Antigravity

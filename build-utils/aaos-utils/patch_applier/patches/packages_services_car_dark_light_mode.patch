@@ -1,0 +1,333 @@
+diff --git a/car_product/rro/CarResourceCommon/res-color/values-night/color_palettes.xml b/car_product/rro/CarResourceCommon/res-color/values-night/color_palettes.xml
+new file mode 100644
+index 0000000..94c91be
+--- /dev/null
++++ b/car_product/rro/CarResourceCommon/res-color/values-night/color_palettes.xml
+@@ -0,0 +1,123 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!--
++  ~ Copyright (C) 2023 The Android Open Source Project
++  ~
++  ~ Licensed under the Apache License, Version 2.0 (the "License");
++  ~ you may not use this file except in compliance with the License.
++  ~ You may obtain a copy of the License at
++  ~
++  ~      http://www.apache.org/licenses/LICENSE-2.0
++  ~
++  ~ Unless required by applicable law or agreed to in writing, software
++  ~ distributed under the License is distributed on an "AS IS" BASIS,
++  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++  ~ See the License for the specific language governing permissions and
++  ~ limitations under the License.
++  -->
++<resources>
++    <bool name="car_is_light_theme">false</bool>
++    <!-- primary colors -->
++    <color name="car_primary">@color/car_primary_80</color>
++    <color name="car_on_primary">@color/car_primary_20</color>
++    <color name="car_primary_container">@color/car_primary_30</color>
++    <color name="car_on_primary_container">@color/car_primary_90</color>
++
++    <!-- secondary colors -->
++    <color name="car_secondary">@color/car_secondary_80</color>
++    <color name="car_on_secondary">@color/car_secondary_20</color>
++    <color name="car_secondary_container">@color/car_secondary_30</color>
++    <color name="car_on_secondary_container">@color/car_secondary_90</color>
++
++    <!-- tertiary colors -->
++    <color name="car_tertiary">@color/car_tertiary_80</color>
++    <color name="car_on_tertiary">@color/car_tertiary_20</color>
++    <color name="car_tertiary_container">@color/car_tertiary_30</color>
++    <color name="car_on_tertiary_container">@color/car_tertiary_90</color>
++
++    <!-- text colors, auto specific -->
++    <color name="car_text_primary">@color/car_neutral_95</color>
++    <color name="car_text_secondary">@color/car_neutral_variant_70</color>
++
++    <!-- error colors -->
++    <color name="car_error">@color/car_red_80</color>
++    <color name="car_on_error">@color/car_red_20</color>
++    <color name="car_error_container">@color/car_red_30</color>
++    <color name="car_on_error_container">@color/car_red_90</color>
++
++    <!-- background colors -->
++    <color name="car_background">@color/car_neutral_10</color>
++    <color name="car_on_background">@color/car_neutral_90</color>
++
++    <!-- surface colors -->
++    <color name="car_surface">@color/car_neutral_2</color>
++    <color name="car_on_surface">@color/car_neutral_90</color>
++    <color name="car_surface_dim">@color/car_neutral_6</color>
++    <color name="car_surface_bright">@color/car_neutral_24</color>
++    <color name="car_inverse_surface">@color/car_neutral_90</color>
++    <color name="car_inverse_on_surface">@color/car_neutral_20</color>
++    <color name="car_surface_container">@color/car_neutral_12</color>
++    <color name="car_surface_container_low">@color/car_neutral_10</color>
++    <color name="car_surface_container_lowest">@color/car_neutral_4</color>
++    <color name="car_surface_container_high">@color/car_neutral_17</color>
++    <color name="car_surface_container_highest">@color/car_neutral_22</color>
++    <color name="car_surface_variant">@color/car_neutral_variant_30</color>
++    <color name="car_on_surface_variant">@color/car_neutral_variant_80</color>
++    <color name="car_outline">@color/car_neutral_variant_60</color>
++    <color name="car_outline_variant">@color/car_neutral_variant_30</color>
++    <color name="car_scrim">@color/car_neutral_0</color>
++    <color name="car_shadow">@color/car_neutral_0</color>
++    <color name="car_inverse_primary">@color/car_primary_40</color>
++    <color name="car_surface_1">#222429</color>
++    <color name="car_surface_2">#272930</color>
++    <color name="car_surface_3">#2b2e37</color>
++    <color name="car_surface_4">#2d2f39</color>
++    <color name="car_surface_5">#30333e</color>
++
++    <!-- red colors -->
++    <color name="car_red_color">@color/car_red_70</color>
++    <color name="car_red_on_color">@color/car_red_10</color>
++    <color name="car_red_color_container">@color/car_red_30</color>
++    <color name="car_red_on_color_container">@color/car_red_90</color>
++    <color name="car_red_tint">#dc362e</color>
++    <color name="car_decline_red">#d77163</color>
++    <color name="car_on_decline_red">#1c0f0d</color>
++
++    <!-- blue colors -->
++    <color name="car_blue_color">@color/car_blue_70</color>
++    <color name="car_blue_on_color">@color/car_blue_10</color>
++    <color name="car_blue_color_container">@color/car_blue_30</color>
++    <color name="car_blue_on_color_container">@color/car_blue_90</color>
++    <color name="car_blue_tint">#4285f4</color>
++
++    <!-- green colors -->
++    <color name="car_green_color">@color/car_green_70</color>
++    <color name="car_green_on_color">@color/car_green_10</color>
++    <color name="car_green_color_container">@color/car_green_30</color>
++    <color name="car_green_on_color_container">@color/car_green_90</color>
++    <color name="car_green_tint">#37be5f</color>
++    <color name="car_confirm_green">#75b885</color>
++    <color name="car_on_confirm_green">#0f1811</color>
++
++    <!-- yellow colors -->
++    <color name="car_yellow_color">@color/car_yellow_70</color>
++    <color name="car_yellow_on_color">@color/car_yellow_10</color>
++    <color name="car_yellow_color_container">@color/car_yellow_30</color>
++    <color name="car_yellow_on_color_container">@color/car_yellow_90</color>
++    <color name="car_yellow_tint">#fbbc04</color>
++
++    <!-- control highlight colors -->
++    <color name="car_control_highlight">#99d9e2ff</color>
++
++    <!-- indicator colors -->
++    <color name = "car_icon_indicator_color">@color/car_red_tint</color>
++
++    <!-- control focus colors -->
++    <color name="car_focus_ring">@color/car_primary</color>
++    <color name="car_focus_background">#99b0c5ff</color>
++
++    <!-- TODO(b/302163073) - update rotary specs -->
++    <!-- Rotary Colors -->
++    <color name="car_rotary_focus_stroke_color">#94CBFF</color>
++    <color name="car_rotary_focus_fill_color">#3D94CBFF</color>
++    <color name="car_rotary_focus_pressed_fill_color">#8A94CBFF</color>
++</resources>
+diff --git a/car_product/rro/CarResourceCommon/res-color/values/color_palettes.xml b/car_product/rro/CarResourceCommon/res-color/values/color_palettes.xml
+index 553291b..2f0d029 100644
+--- a/car_product/rro/CarResourceCommon/res-color/values/color_palettes.xml
++++ b/car_product/rro/CarResourceCommon/res-color/values/color_palettes.xml
+@@ -15,93 +15,94 @@
+   ~ limitations under the License.
+   -->
+ <resources>
++    <bool name="car_is_light_theme">true</bool>
+     <!-- primary colors -->
+-    <color name="car_primary">@color/car_primary_80</color>
+-    <color name="car_on_primary">@color/car_primary_20</color>
+-    <color name="car_primary_container">@color/car_primary_30</color>
+-    <color name="car_on_primary_container">@color/car_primary_90</color>
++    <color name="car_primary">@color/car_primary_40</color>
++    <color name="car_on_primary">@color/car_primary_100</color>
++    <color name="car_primary_container">@color/car_primary_90</color>
++    <color name="car_on_primary_container">@color/car_primary_10</color>
+ 
+     <!-- secondary colors -->
+-    <color name="car_secondary">@color/car_secondary_80</color>
+-    <color name="car_on_secondary">@color/car_secondary_20</color>
+-    <color name="car_secondary_container">@color/car_secondary_30</color>
+-    <color name="car_on_secondary_container">@color/car_secondary_90</color>
++    <color name="car_secondary">@color/car_secondary_40</color>
++    <color name="car_on_secondary">@color/car_secondary_100</color>
++    <color name="car_secondary_container">@color/car_secondary_90</color>
++    <color name="car_on_secondary_container">@color/car_secondary_10</color>
+ 
+     <!-- tertiary colors -->
+-    <color name="car_tertiary">@color/car_tertiary_80</color>
+-    <color name="car_on_tertiary">@color/car_tertiary_20</color>
+-    <color name="car_tertiary_container">@color/car_tertiary_30</color>
+-    <color name="car_on_tertiary_container">@color/car_tertiary_90</color>
++    <color name="car_tertiary">@color/car_tertiary_40</color>
++    <color name="car_on_tertiary">@color/car_tertiary_100</color>
++    <color name="car_tertiary_container">@color/car_tertiary_90</color>
++    <color name="car_on_tertiary_container">@color/car_tertiary_10</color>
+ 
+     <!-- text colors, auto specific -->
+-    <color name="car_text_primary">@color/car_neutral_95</color>
+-    <color name="car_text_secondary">@color/car_neutral_variant_70</color>
++    <color name="car_text_primary">@color/car_neutral_10</color>
++    <color name="car_text_secondary">@color/car_neutral_variant_30</color>
+ 
+     <!-- error colors -->
+-    <color name="car_error">@color/car_red_80</color>
+-    <color name="car_on_error">@color/car_red_20</color>
+-    <color name="car_error_container">@color/car_red_30</color>
+-    <color name="car_on_error_container">@color/car_red_90</color>
++    <color name="car_error">@color/car_red_40</color>
++    <color name="car_on_error">@color/car_red_100</color>
++    <color name="car_error_container">@color/car_red_90</color>
++    <color name="car_on_error_container">@color/car_red_10</color>
+ 
+     <!-- background colors -->
+-    <color name="car_background">@color/car_neutral_10</color>
+-    <color name="car_on_background">@color/car_neutral_90</color>
++    <color name="car_background">@color/car_neutral_98</color>
++    <color name="car_on_background">@color/car_neutral_10</color>
+ 
+     <!-- surface colors -->
+-    <color name="car_surface">@color/car_neutral_2</color>
+-    <color name="car_on_surface">@color/car_neutral_90</color>
+-    <color name="car_surface_dim">@color/car_neutral_6</color>
+-    <color name="car_surface_bright">@color/car_neutral_24</color>
+-    <color name="car_inverse_surface">@color/car_neutral_90</color>
+-    <color name="car_inverse_on_surface">@color/car_neutral_20</color>
+-    <color name="car_surface_container">@color/car_neutral_12</color>
+-    <color name="car_surface_container_low">@color/car_neutral_10</color>
+-    <color name="car_surface_container_lowest">@color/car_neutral_4</color>
+-    <color name="car_surface_container_high">@color/car_neutral_17</color>
+-    <color name="car_surface_container_highest">@color/car_neutral_22</color>
+-    <color name="car_surface_variant">@color/car_neutral_variant_30</color>
+-    <color name="car_on_surface_variant">@color/car_neutral_variant_80</color>
+-    <color name="car_outline">@color/car_neutral_variant_60</color>
+-    <color name="car_outline_variant">@color/car_neutral_variant_30</color>
+-    <color name="car_scrim">@color/car_neutral_0</color>
++    <color name="car_surface">@color/car_neutral_98</color>
++    <color name="car_on_surface">@color/car_neutral_10</color>
++    <color name="car_surface_dim">@color/car_neutral_87</color>
++    <color name="car_surface_bright">@color/car_neutral_98</color>
++    <color name="car_inverse_surface">@color/car_neutral_20</color>
++    <color name="car_inverse_on_surface">@color/car_neutral_95</color>
++    <color name="car_surface_container">@color/car_neutral_94</color>
++    <color name="car_surface_container_low">@color/car_neutral_95</color>
++    <color name="car_surface_container_lowest">@color/car_neutral_100</color>
++    <color name="car_surface_container_high">@color/car_neutral_92</color>
++    <color name="car_surface_container_highest">@color/car_neutral_90</color>
++    <color name="car_surface_variant">@color/car_neutral_variant_90</color>
++    <color name="car_on_surface_variant">@color/car_neutral_variant_30</color>
++    <color name="car_outline">@color/car_neutral_variant_50</color>
++    <color name="car_outline_variant">@color/car_neutral_variant_90</color>
++    <color name="car_scrim">@color/car_neutral_10</color>
+     <color name="car_shadow">@color/car_neutral_0</color>
+-    <color name="car_inverse_primary">@color/car_primary_40</color>
+-    <color name="car_surface_1">#222429</color>
+-    <color name="car_surface_2">#272930</color>
+-    <color name="car_surface_3">#2b2e37</color>
+-    <color name="car_surface_4">#2d2f39</color>
+-    <color name="car_surface_5">#30333e</color>
++    <color name="car_inverse_primary">@color/car_primary_80</color>
++    <color name="car_surface_1">#f0f4f8</color>
++    <color name="car_surface_2">#ebeef3</color>
++    <color name="car_surface_3">#e5e8ed</color>
++    <color name="car_surface_4">#dfe3e7</color>
++    <color name="car_surface_5">#d7dadf</color>
+ 
+     <!-- red colors -->
+-    <color name="car_red_color">@color/car_red_70</color>
+-    <color name="car_red_on_color">@color/car_red_10</color>
+-    <color name="car_red_color_container">@color/car_red_30</color>
+-    <color name="car_red_on_color_container">@color/car_red_90</color>
++    <color name="car_red_color">@color/car_red_40</color>
++    <color name="car_red_on_color">@color/car_red_100</color>
++    <color name="car_red_color_container">@color/car_red_90</color>
++    <color name="car_red_on_color_container">@color/car_red_10</color>
+     <color name="car_red_tint">#dc362e</color>
+     <color name="car_decline_red">#d77163</color>
+     <color name="car_on_decline_red">#1c0f0d</color>
+ 
+     <!-- blue colors -->
+-    <color name="car_blue_color">@color/car_blue_70</color>
+-    <color name="car_blue_on_color">@color/car_blue_10</color>
+-    <color name="car_blue_color_container">@color/car_blue_30</color>
+-    <color name="car_blue_on_color_container">@color/car_blue_90</color>
++    <color name="car_blue_color">@color/car_blue_40</color>
++    <color name="car_blue_on_color">@color/car_blue_100</color>
++    <color name="car_blue_color_container">@color/car_blue_90</color>
++    <color name="car_blue_on_color_container">@color/car_blue_10</color>
+     <color name="car_blue_tint">#4285f4</color>
+ 
+     <!-- green colors -->
+-    <color name="car_green_color">@color/car_green_70</color>
+-    <color name="car_green_on_color">@color/car_green_10</color>
+-    <color name="car_green_color_container">@color/car_green_30</color>
+-    <color name="car_green_on_color_container">@color/car_green_90</color>
++    <color name="car_green_color">@color/car_green_40</color>
++    <color name="car_green_on_color">@color/car_green_100</color>
++    <color name="car_green_color_container">@color/car_green_90</color>
++    <color name="car_green_on_color_container">@color/car_green_10</color>
+     <color name="car_green_tint">#37be5f</color>
+     <color name="car_confirm_green">#75b885</color>
+     <color name="car_on_confirm_green">#0f1811</color>
+ 
+     <!-- yellow colors -->
+-    <color name="car_yellow_color">@color/car_yellow_70</color>
+-    <color name="car_yellow_on_color">@color/car_yellow_10</color>
+-    <color name="car_yellow_color_container">@color/car_yellow_30</color>
+-    <color name="car_yellow_on_color_container">@color/car_yellow_90</color>
++    <color name="car_yellow_color">@color/car_yellow_40</color>
++    <color name="car_yellow_on_color">@color/car_yellow_100</color>
++    <color name="car_yellow_color_container">@color/car_yellow_90</color>
++    <color name="car_yellow_on_color_container">@color/car_yellow_10</color>
+     <color name="car_yellow_tint">#fbbc04</color>
+ 
+     <!-- control highlight colors -->
+diff --git a/car_product/rro/overlay-visual/androidRRO/res/values/themes_device_defaults.xml b/car_product/rro/overlay-visual/androidRRO/res/values/themes_device_defaults.xml
+index 7543d51..d4db30b 100644
+--- a/car_product/rro/overlay-visual/androidRRO/res/values/themes_device_defaults.xml
++++ b/car_product/rro/overlay-visual/androidRRO/res/values/themes_device_defaults.xml
+@@ -54,7 +54,7 @@
+         <item name="android:textAppearanceButton">@*android:style/TextAppearance.DeviceDefault.Widget.Button</item>
+         <item name="android:actionBarSize">@*android:dimen/car_app_bar_height</item>
+         <item name="*android:disabledAlpha">@dimen/car_disabled_alpha</item>
+-        <item name="android:isLightTheme">false</item>
++        <item name="android:isLightTheme">@bool/car_is_light_theme</item>
+     </style>
+ 
+     <style name="Theme.DeviceDefault" parent="Theme.DeviceDefaultBaseCar">
+@@ -148,7 +148,7 @@
+         <item name="*android:disabledAlpha">@dimen/car_disabled_alpha</item>
+         <!--  To simulate transparency over light (white) background, we don't need a selector. -->
+         <item name="android:windowLayoutInDisplayCutoutMode">always</item>
+-        <item name="android:isLightTheme">false</item>
++        <item name="android:isLightTheme">@bool/car_is_light_theme</item>
+     </style>
+     <style name="Theme.DeviceDefault.Light.Dialog" parent="android:Theme.DeviceDefault.Dialog"/>
+     <style name="Theme.DeviceDefault.Light.Dialog.Alert" parent="android:Theme.DeviceDefault.Dialog.Alert"/>
+@@ -158,13 +158,13 @@
+         <item name="android:windowActionBar">false</item>
+         <item name="android:windowNoTitle">true</item>
+         <item name="android:windowLayoutInDisplayCutoutMode">always</item>
+-        <item name="android:isLightTheme">false</item>
++        <item name="android:isLightTheme">@bool/car_is_light_theme</item>
+     </style>
+     <style name="Theme.DeviceDefault.NoActionBar" parent="android:Theme.DeviceDefault">
+         <item name="android:windowActionBar">false</item>
+         <item name="android:windowNoTitle">true</item>
+         <item name="android:windowLayoutInDisplayCutoutMode">always</item>
+-        <item name="android:isLightTheme">false</item>
++        <item name="android:isLightTheme">@bool/car_is_light_theme</item>
+     </style>
+ 
+     <style name="Theme.DeviceDefault.InputMethod" parent="android:Theme.Material.InputMethod">
+@@ -183,7 +183,7 @@
+     <!-- This theme is applied as the app base. Attributes not defined in app/ activity themes will fallthrough to this
+     theme. This makes it app facing, regardless if the app is directly using it or a theme that inherits from it.  -->
+     <style name="Theme.DeviceDefault.Light.DarkActionBar"  parent="Theme.DeviceDefaultBaseCar">
+-        <item name="android:isLightTheme">false</item>
++        <item name="android:isLightTheme">@bool/car_is_light_theme</item>
+     </style>
+ 
+     <!-- DeviceDefault theme for the default system theme.  -->

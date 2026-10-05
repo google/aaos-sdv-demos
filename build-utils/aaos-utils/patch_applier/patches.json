@@ -40,5 +40,40 @@
     "description": "base sample changes, add car controller, tweak signals",
     "tag": "base",
     "patch_ordering": 0
+  },
+  {
+    "repo_path": "system/software_defined_vehicle/samples",
+    "patch_filename": "patches/vhal_proxy_dark_light_mode.patch",
+    "description": "Add NightMode VHAL proxy subscriber mapping from CarController",
+    "tag": "dark-light-mode",
+    "patch_ordering": 1
+  },
+  {
+    "repo_path": "packages/services/Car",
+    "patch_filename": "patches/packages_services_car_disable_user_notice.patch",
+    "description": "Disable initial user notice demo dialog on startup",
+    "tag": "ivi-no-gas-extra",
+    "patch_ordering": 0
+  },
+  {
+    "repo_path": "packages/services/Car",
+    "patch_filename": "patches/packages_services_car_dark_light_mode.patch",
+    "description": "Enable Day/Night light and dark color palettes and isLightTheme in CarFrameworkResVisualRRO",
+    "tag": "dark-light-mode",
+    "patch_ordering": 1
+  },
+  {
+    "repo_path": "packages/apps/Car/Launcher",
+    "patch_filename": "patches/packages_apps_car_launcher_calm_mode_card.patch",
+    "description": "Replace missing maps card placeholder with CalmMode clock screen",
+    "tag": "ivi-no-gas-extra",
+    "patch_ordering": 0
+  },
+  {
+    "repo_path": "packages/apps/Car/Launcher",
+    "patch_filename": "patches/packages_apps_car_launcher_dark_light_mode.patch",
+    "description": "Enable OEM design token Day/Night styling and uiMode recreation in CarLauncher and CalmMode",
+    "tag": "dark-light-mode",
+    "patch_ordering": 1
   }
 ]

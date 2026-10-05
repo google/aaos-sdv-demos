@@ -17,6 +17,9 @@
 # shellcheck disable=SC1091
 source /google/recipe/base.sh
 
+# Enable Application Default Credentials (ADC) auth for Antigravity CLI (agy)
+export AGY_ADC_AUTH="${AGY_ADC_AUTH:-true}"
+
 # CARLA Environment
 if [ -z "${CARLA_DIR:-}" ]; then
   if [ -n "${HOME:-}" ] && [ -d "${HOME}/Workspace/carla-installation" ]; then

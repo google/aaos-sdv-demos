@@ -38,12 +38,6 @@ if [ -n "${CARLA_DIR:-}" ] && [ -d "${CARLA_DIR}" ]; then
   esac
 fi
 
-# Interactive shell utilities and welcome message
-if [[ $- != *i* ]]; then
-  # shellcheck disable=SC2317
-  return 0 2> /dev/null || true
-fi
-
 cat /google/sdv-bashrc-hook/ascii_art
 echo "Welcome to the aaos-sdv dev env!"
 echo '"cat /google/sdv-bashrc-hook/README" to get started'
@@ -72,6 +66,19 @@ launch_carla() {
   fi
   gnome-terminal -- bash -ic 'trap exit SIGINT; /google/someip-bridge/run_carla_and_bridge.sh --mode=manual-wasd; exec bash'
 }
+
+# Function for launching Android Studio for Platform (ASfP)
+asfp() {
+  if [[ $# -eq 0 ]]; then
+    set -- "${HOME}/Workspace/asfp-project"
+  fi
+  XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/1000}" \
+  DISPLAY="${DISPLAY:-:0}" \
+    /opt/android-studio-for-platform-canary/bin/studio "$@" > /dev/null 2>&1 < /dev/null & disown
+}
+
+# Alias for visualizing Cuttlefish instances in Chrome
+alias visualize_cvd='google-chrome --allow-insecure-localhost --user-data-dir=/tmp/dev-chrome-profile https://localhost:8444 > /dev/null 2>&1 < /dev/null & disown'
 
 # Source cvd-wrapping utils
 if [ -f /google/aaos-utils/dev_utils.sh ]; then

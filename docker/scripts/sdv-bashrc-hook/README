@@ -1,37 +1,70 @@
-1. Quickstart, cli flow:
 
-This workstation is created with prebuilt aaos-sdv and aaos-ivi images.
-To launch both:
-```bash
-launch_2vm
-```
+[38;5;25m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+  [1;38;5;25mAAOS SDV + CARLA Quickstart Guide[0m
+[38;5;25m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
 
-Next, install and launch carla simulator and someip-bridge, to feed car signals to aaos:
-```bash
-launch_carla
-```
-NOTE: some demo environments do not come with Carla simulator pre-installed. To install:
-```bash
-install_carla
-```
+Welcome! This cloud workstation lets you run a 3D simulated car alongside
+[1mAndroid Automotive OS (AAOS)[0m and [1mSoftware-Defined Vehicle (SDV)[0m services
+right in your browser.
 
-Carla controls:
-(`?` in pygame window to see all hotkeys. `p` to toggle autopilot, `WASD` to drive)
-(if autopilot gets stuck, `backspace` to unblock)
+  [1;38;5;25m•[0m [1;38;5;130mTip for pasting commands:[0m In this Linux terminal, use
+    [1mRight-Click -> Paste[0m or [1;38;5;55;48;5;254m[Ctrl+Shift+V][0m.
 
-Observe ivi and instrument cluster in browser:
-```bash
-visualize_cvd
-```
+[38;5;250m────────────────────────────────────────────────────────────────────────────[0m
+[1;38;5;25m1. Run the Live Vehicle Simulation (3 Steps)[0m
+[38;5;250m────────────────────────────────────────────────────────────────────────────[0m
 
-2. Develop with Android Studio for Platform:
+[1;38;5;255;48;5;25m Step 1a [0m [1;38;5;18mStart the Android virtual machines[0m
+Copy and paste this command to boot both virtual machines (takes ~30 seconds):
 
-```bash
-asfp
-```
+    [1;38;5;23;48;5;254m  launch_2vm  [0m
 
-3. Develop with Antigravity
+[1;38;5;255;48;5;25m Step 1b [0m [1;38;5;18mStart the 3D car simulator (CARLA)[0m
+Copy and paste this command to open the 3D driving window and stream live
+car signals (speed, gear, RPM) to the Android displays:
 
-```bash
-antigravity-cli
-```
+    [1;38;5;23;48;5;254m  launch_carla  [0m
+
+[3;38;5;241m(Note: If your workstation does not have CARLA pre-installed yet, run this
+once first, then run [0m[1;38;5;23;48;5;254m launch_carla [0m[3;38;5;241m again):[0m
+
+    [1;38;5;23;48;5;254m  install_carla  [0m
+
+[1;38;5;236mDriving controls inside the CARLA car window:[0m
+  [1;38;5;25m•[0m Press [1;38;5;55;48;5;254m[p][0m to turn autopilot on or off
+  [1;38;5;25m•[0m Use [1;38;5;55;48;5;254m[W][0m, [1;38;5;55;48;5;254m[A][0m, [1;38;5;55;48;5;254m[S][0m, [1;38;5;55;48;5;254m[D][0m keys to drive manually
+  [1;38;5;25m•[0m Press [1;38;5;55;48;5;254m[Backspace][0m if autopilot gets stuck
+  [1;38;5;25m•[0m Press [1;38;5;55;48;5;254m[?][0m to see all keyboard shortcuts
+
+[1;38;5;255;48;5;25m Step 1c [0m [1;38;5;18mOpen the vehicle displays in Chrome[0m
+Copy and paste this command to open the Android displays in a browser window:
+
+    [1;38;5;23;48;5;254m  visualize_cvd  [0m
+
+[1;38;5;236mWhat you will see in Chrome (under "Devices" on the left):[0m
+  [1;38;5;25m•[0m [1;38;5;23;48;5;254m vm0 [0m [1m(SDV Instrument Cluster):[0m Shows the driver cluster display.
+    Speed, RPM, and gear update live as the car drives in CARLA.
+  [1;38;5;25m•[0m [1;38;5;23;48;5;254m vm1 [0m [1m(AAOS IVI Display):[0m Shows the center infotainment screen.
+
+[38;5;250m────────────────────────────────────────────────────────────────────────────[0m
+[1;38;5;25m2. Explore and Edit Code in Android Studio (Optional)[0m
+[38;5;250m────────────────────────────────────────────────────────────────────────────[0m
+
+Copy and paste this command to open the pre-configured project in
+[1mAndroid Studio for Platform (ASfP)[0m:
+
+    [1;38;5;23;48;5;254m  asfp  [0m
+
+[3;38;5;241m(Note: When the project opens, background indexing takes about 2 to 3 minutes
+to finish in the bottom-right status bar.)[0m
+
+[38;5;250m────────────────────────────────────────────────────────────────────────────[0m
+[1;38;5;25m3. Build and Test with the Antigravity AI Agent (Optional)[0m
+[38;5;250m────────────────────────────────────────────────────────────────────────────[0m
+
+Copy and paste this command to start the [1mAntigravity[0m command-line
+assistant in the terminal:
+
+    [1;38;5;23;48;5;254m  antigravity-cli  [0m
+
+[38;5;25m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m

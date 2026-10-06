@@ -39,8 +39,8 @@ if [ -n "${CARLA_DIR:-}" ] && [ -d "${CARLA_DIR}" ]; then
 fi
 
 cat /google/sdv-bashrc-hook/ascii_art
-echo "Welcome to the aaos-sdv dev env!"
-echo '"cat /google/sdv-bashrc-hook/README" to get started'
+printf '\033[1;38;5;25mWelcome to the aaos-sdv dev env!\033[0m\n'
+printf 'Run \033[1;38;5;23;48;5;254m cat /google/sdv-bashrc-hook/README \033[0m to get started\n'
 
 # Function for installing CARLA interactively when not pre-baked
 install_carla() {

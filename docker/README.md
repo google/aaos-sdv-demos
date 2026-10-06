@@ -51,6 +51,7 @@ By re-wiring the build graph with `docker buildx bake`:
 - **CARLA Utilities**: `/google/carla915-utils/setup_carla.sh` (copied from `build-utils/carla915-utils/`) and environment path hooks.
 - **SOME/IP Bridge**: `/google/someip-bridge/` scripts and client logic for vehicle simulation.
 - **AAOS & Recipe Utilities**: `/google/aaos-utils/` and `/google/recipe/base.sh` (copied from `build-utils/aaos-utils/` and `build-utils/recipe/`) for checkout, building, and patching Android Automotive OS.
+- **Antigravity IDE**: Extracted to `/opt/Antigravity-x64` and accessible at runtime via the `antigravity_ide` shell alias.
 
 ---
 

@@ -27,6 +27,7 @@
 #   - SOME/IP bridge and client orchestration scripts
 #   - AAOS (Android Automotive OS) latest release demo & patching utilities
 #   - Remote desktop stack: X11 + openbox + tint2 + Selkies NVENC H.264
+#   - Antigravity IDE
 # ==============================================================================
 
 ARG BASE_IMAGE
@@ -72,6 +73,7 @@ ARG CARLA_RUNTIME_PKGS="\
 # (https://github.com/selkies-project/selkies/issues/46), so a compositor in the
 # video path can only ever be an extra hop.
 ARG SELKIES_DEB_URL="https://github.com/selkies-project/selkies/releases/download/2.0.0rc0/selkies-2.0.0rc0-ubuntu24.04-amd64.deb"
+ARG ANTIGRAVITY_URL="https://storage.googleapis.com/antigravity-public/antigravity-hub/2.19.1-6046815158665216/linux-x64/Antigravity.tar.gz"
 ARG SELKIES_STACK_PKGS="\
   gnome-terminal \
   openbox \
@@ -107,6 +109,9 @@ RUN rm -f /usr/local/bin/asfp-studio
 
 # Bypass the wrapper that assumes a wayland system.
 RUN ln -sf /usr/local/bin/google-chrome-stable /usr/local/bin/google-chrome
+
+# 1d. Download and extract Antigravity IDE
+RUN curl -fsSL "${ANTIGRAVITY_URL}" | tar -xz -C /opt
 
 # 2. Standalone Python 3.7 environment with CARLA and SOME/IP dependencies
 COPY --from=python:3.7-slim /usr/local /opt/python3.7

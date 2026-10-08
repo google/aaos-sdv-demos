@@ -51,7 +51,7 @@ By re-wiring the build graph with `docker buildx bake`:
 - **CARLA Utilities**: `/google/carla915-utils/setup_carla.sh` (copied from `build-utils/carla915-utils/`) and environment path hooks.
 - **SOME/IP Bridge**: `/google/someip-bridge/` scripts and client logic for vehicle simulation.
 - **AAOS & Recipe Utilities**: `/google/aaos-utils/` and `/google/recipe/base.sh` (copied from `build-utils/aaos-utils/` and `build-utils/recipe/`) for checkout, building, and patching Android Automotive OS.
-- **Antigravity IDE**: Extracted to `/opt/Antigravity-x64` and accessible at runtime via the `antigravity_ide` shell alias.
+- **Antigravity IDE**: Extracted to `/opt/Antigravity-x64`, auto-started on the left 40% of the desktop via `sdv-antigravity.service`, and accessible at runtime via `antigravity-ide`.
 
 ---
 
@@ -72,7 +72,7 @@ Xtigervnc is used rather than Xvfb because it supports RandR resizing at runtime
 which is what makes Selkies' dynamic resolution work. **Nothing connects over the
 VNC protocol.**
 
-The stack runs as five systemd units under `sdv-desktop.target`
+The stack runs as systemd units under `sdv-desktop.target`
 (`docker/systemd/`), so it is supervised (`Restart=always`) and logs to the
 journal:
 
@@ -81,8 +81,9 @@ systemctl status sdv-desktop.target
 journalctl -u sdv-selkies -f
 ```
 
-Neither `openbox` nor `tint2` is configured — both run on stock defaults, and
-this image deliberately ships no `rc.xml`, `menu.xml` or `tint2rc`.
+`tint2` runs on stock defaults, and `/etc/xdg/openbox/rc.xml` includes window
+placement rules that snap Antigravity IDE to the left 40% of the screen and
+place the initial SDV Terminal on the right side.
 
 ---
 

@@ -77,9 +77,6 @@ asfp() {
     /opt/android-studio-for-platform-canary/bin/studio "$@" > /dev/null 2>&1 < /dev/null & disown
 }
 
-# Alias for launching Antigravity IDE
-alias antigravity_ide='/opt/Antigravity-x64/antigravity --no-sandbox'
-
 # Alias for visualizing Cuttlefish instances in Chrome
 alias visualize_cvd='google-chrome --allow-insecure-localhost --user-data-dir=/tmp/dev-chrome-profile https://localhost:8444 > /dev/null 2>&1 < /dev/null & disown'
 

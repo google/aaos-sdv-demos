@@ -65,7 +65,7 @@ to finish in the bottom-right status bar.)[0m
 Copy and paste this command to launch the [1mAntigravity IDE[0m desktop
 application:
 
-    [1;38;5;23;48;5;254m  antigravity_ide  [0m
+    [1;38;5;23;48;5;254m  antigravity-ide[0m
 
 Or start the [1mAntigravity[0m command-line assistant in the terminal:
 

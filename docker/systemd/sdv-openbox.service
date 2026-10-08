@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Window manager. Stock openbox defaults - this image ships no rc.xml and no
-# menu.xml, so the Debian root menu (right-click) is what you get.
+# Window manager. Window placement rules for Antigravity IDE (left 40%) and
+# the initial SDV Terminal (right side) are configured in /etc/xdg/openbox/rc.xml.
 #
 # No [Install] section on purpose: activation comes from sdv-desktop.target.
 
@@ -23,12 +23,20 @@ Requires=sdv-xserver.service
 After=sdv-xserver.service
 
 [Service]
-Type=simple
+Type=notify
+NotifyAccess=all
 User=user
 PAMName=systemd-user
 Environment=DISPLAY=:0
 Environment=LANG=en_US.UTF-8
-ExecStart=/usr/bin/openbox
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+# Launch via a login shell (-l) so /etc/profile and /etc/profile.d/*.sh
+# (disable_gcloud_gce_check.sh, default_envs.sh, go_envs.sh, etc.) run at
+# session startup and are exported to D-Bus/systemd before any desktop apps
+# launch. Openbox's --startup hook notifies systemd only after rc.xml is loaded
+# and the window manager selection on :0 is owned.
+ExecStart=/bin/bash -l -c '/usr/bin/dbus-update-activation-environment --systemd --all && exec /usr/bin/openbox --startup "/usr/bin/systemd-notify --ready"'
 ExecStartPost=-/usr/bin/xsetroot -solid "#A1BE95"
 Restart=always
 RestartSec=2

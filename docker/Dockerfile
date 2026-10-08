@@ -107,8 +107,11 @@ RUN curl -fsSL -o /tmp/selkies.deb "${SELKIES_DEB_URL}" && \
 COPY --chmod=755 docker/scripts/bin/ /usr/local/bin/
 RUN rm -f /usr/local/bin/asfp-studio
 
-# Bypass the wrapper that assumes a wayland system.
-RUN ln -sf /usr/local/bin/google-chrome-stable /usr/local/bin/google-chrome
+# Bypass the wrapper that assumes a wayland system, and restore the
+# /usr/bin/google-chrome-stable symlink referenced by google-chrome.desktop
+# and /etc/alternatives/x-www-browser.
+RUN ln -sf /usr/local/bin/google-chrome-stable /usr/local/bin/google-chrome && \
+    ln -sf /usr/local/bin/google-chrome-stable /usr/bin/google-chrome-stable
 
 # 1d. Download and extract Antigravity IDE
 RUN curl -fsSL "${ANTIGRAVITY_URL}" | tar -xz -C /opt
@@ -148,6 +151,8 @@ COPY --chmod=644 docker/nginx/default.template /etc/nginx/sites-available/defaul
 COPY --chmod=644 docker/nginx/conf.d/ /etc/nginx/conf.d/
 COPY --chmod=755 docker/scripts/workstation-startup.d/ /etc/workstation-startup.d/
 COPY --chmod=644 docker/systemd/ /etc/systemd/system/
+COPY --chmod=644 docker/xdg/applications/antigravity.desktop /usr/share/applications/antigravity.desktop
+COPY --chmod=644 docker/xdg/openbox/rc.xml /etc/xdg/openbox/rc.xml
 COPY --chmod=644 docker/scripts/sdv-bashrc-hook/ /google/sdv-bashrc-hook/
 # Override the base image's user_setup.sh.
 COPY --chmod=751 docker/scripts/google/user_setup.sh /google/scripts/user_setup.sh

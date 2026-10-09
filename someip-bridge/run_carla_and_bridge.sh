@@ -124,7 +124,10 @@ else
 fi
 
 # --- Cleanup Logic ---
+MONITORED_PIDS=()
+
 cleanup() {
+  trap - SIGINT SIGTERM SIGHUP EXIT
   echo -e "\nShutting down simulation stack..."
 
   # Aggressive sweep for components (handles orphaning)
@@ -158,6 +161,7 @@ echo "Starting CARLA Simulator from $CARLA_PATH (Quality: $QUALITY, Renderer: ${
 # OPTIMISATION: Use SDL_VIDEODRIVER=dummy to bypass SDL2 window-event polling and -ResX=1 -ResY=1 so the invisible -RenderOffScreen server spectator viewport renders 1x1 pixel instead of wasting 50% of GPU fillrate on a hidden 1280x720 pass
 SDL_VIDEODRIVER=dummy "$CARLA_PATH" $RENDERER_FLAG -quality-level="$QUALITY" -carla-rpc-port="$CARLA_MAIN_PORT" -RenderOffScreen -nosound -ResX=1 -ResY=1 &
 CARLA_PID=$!
+MONITORED_PIDS+=("$CARLA_PID")
 
 echo "Waiting for simulator to warm up..."
 sleep 10
@@ -174,15 +178,15 @@ sleep 6
 if [ "$SPAWN_CAMERA" = true ]; then
   echo "Starting Camera Display Client..."
   "$PYTHON_EXEC" "$CAMERA_CLIENT_PATH" --host 127.0.0.1 --res 1280x720 &
-  # shellcheck disable=SC2034
   CAMERA_CLIENT_PID=$!
+  MONITORED_PIDS+=("$CAMERA_CLIENT_PID")
 fi
 
 if [ "$MODE" == "manual-wasd" ]; then
   echo "Starting Manual Control (+ spawning car)..."
   "$PYTHON_EXEC" "$MANUAL_CONTROL_CLIENT_PATH" -p "$CARLA_MAIN_PORT" --autopilot --filter="vehicle.mini*" &
-  # shellcheck disable=SC2034
   MANUAL_CONTROL_PID=$!
+  MONITORED_PIDS+=("$MANUAL_CONTROL_PID")
 
   echo "Waiting for car to spawn..."
   sleep 5
@@ -197,20 +201,21 @@ if [ "$RUN_BRIDGE" = true ]; then
       -R 2000:localhost:2000 -R 2001:localhost:2001 -R 2002:localhost:2002 "$REMOTE_BRIDGE" \
       "cd $REMOTE_PATH && ( [ -x .venv/bin/python ] && .venv/bin/python carla_someip_client.py --mode='$MODE' || ( command -v python3.7 > /dev/null 2>&1 && python3.7 carla_someip_client.py --mode='$MODE' || python3 carla_someip_client.py --mode='$MODE' ) )" &
     BRIDGE_PID=$!
+    MONITORED_PIDS+=("$BRIDGE_PID")
   else
     # --- Local Bridge Setup ---
     echo "Starting local CARLA-SOME/IP Bridge with mode: $MODE"
     "$PYTHON_EXEC" "${SCRIPT_DIR}/carla_someip_client.py" --mode="$MODE" &
     BRIDGE_PID=$!
+    MONITORED_PIDS+=("$BRIDGE_PID")
   fi
-
-  # Wait for the bridge client to finish
-  wait "$BRIDGE_PID"
 else
   echo "Skipping CARLA-SOME/IP Bridge and SOME/IP setup as requested."
-  # Wait for background processes (CARLA)
-  wait "$CARLA_PID"
 fi
 
-# If the python script exits on its own, trigger cleanup
+# Wait for any monitored component (e.g., Pygame manual_control window,
+# CARLA server, or SOME/IP bridge) to exit, then tear down the entire stack.
+wait -n "${MONITORED_PIDS[@]}"
+
+# If any component exits on its own, trigger cleanup
 cleanup

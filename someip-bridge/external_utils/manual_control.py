@@ -389,7 +389,7 @@ class World(object):
         actor_type = get_actor_display_name(self.player)
         self.hud.notification(actor_type)
 
-        self.world.wait_for_tick()
+        self.world.tick()
 
     # OPTIMISATION: Disable CARLA's automatic day/night street and building light activation (401 dynamic lights in Town10HD_Opt) to prevent night-preset shadow rendering FPS collapse.
     def _disable_all_map_lights(self):
@@ -1342,21 +1342,19 @@ def game_loop(args):
     pygame.font.init()
     world = None
     original_settings = None
+    traffic_manager = None
 
     try:
         client = carla.Client(args.host, args.port)
         sim_world = client.get_world()
         traffic_manager = client.get_trafficmanager()
         original_settings = sim_world.get_settings()
+        target_fps = 30
         settings = sim_world.get_settings()
-        # OPTIMISATION: Run in asynchronous mode with 100 Hz physics substepping (max_substep_delta_time=0.01, max_substeps=10) so CarlaUE4 renders in parallel with Pygame while vehicle physics stay deterministic.
-        settings.synchronous_mode = False
-        settings.fixed_delta_seconds = None
-        settings.substepping = True
-        settings.max_substep_delta_time = 0.01
-        settings.max_substeps = 10
+        settings.synchronous_mode = True
+        settings.fixed_delta_seconds = 1.0 / target_fps
         sim_world.apply_settings(settings)
-        traffic_manager.set_synchronous_mode(False)
+        traffic_manager.set_synchronous_mode(True)
 
         display = pygame.display.set_mode(
             (args.width, args.height),
@@ -1368,12 +1366,12 @@ def game_loop(args):
         world = World(sim_world, hud, args)
         controller = KeyboardControl(world, args.autopilot)
 
-        sim_world.wait_for_tick()
+        sim_world.tick()
 
-        target_fps = 40
         clock = pygame.time.Clock()
         while True:
-            clock.tick(target_fps)
+            sim_world.tick()
+            clock.tick_busy_loop(target_fps)
             if controller.parse_events(client, world, clock):
                 return
             world.tick(clock)
@@ -1381,6 +1379,9 @@ def game_loop(args):
             pygame.display.flip()
 
     finally:
+
+        if traffic_manager is not None:
+            traffic_manager.set_synchronous_mode(False)
 
         if original_settings:
             sim_world.apply_settings(original_settings)

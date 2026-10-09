@@ -49,6 +49,13 @@
     "patch_ordering": 1
   },
   {
+    "repo_path": "system/software_defined_vehicle/samples",
+    "patch_filename": "patches/system_software_defined_vehicle_samples_hackathon_task.patch",
+    "description": "Add AirbagTester service bundle and hackathon debugging tasks in CarController and VHAL proxy",
+    "tag": "hackathon-task",
+    "patch_ordering": 2
+  },
+  {
     "repo_path": "packages/services/Car",
     "patch_filename": "patches/packages_services_car_disable_user_notice.patch",
     "description": "Disable initial user notice demo dialog on startup",

@@ -57,14 +57,16 @@ install_carla() {
   fi
 }
 
-# Function for launching carla in a standalone terminal
+# Function for launching CARLA and SOME/IP bridge in the background
 launch_carla() {
   if [ ! -f "${CARLA_DIR}/CarlaUE4.sh" ]; then
     echo "[CARLA] Error: CARLA is not installed at ${CARLA_DIR}."
     echo "[CARLA] Please run 'install_carla' first to accept the Unreal Engine EULA and install CARLA."
     return 1
   fi
-  gnome-terminal -- bash -ic 'trap exit SIGINT; /google/someip-bridge/run_carla_and_bridge.sh --mode=manual-wasd; exec bash'
+  echo "[CARLA] Launching CARLA and SOME/IP bridge in the background (logs: /tmp/carla.log)..."
+  echo "[CARLA] Close the CARLA Pygame window (or press ESC) to stop CARLA and the bridge."
+  /google/someip-bridge/run_carla_and_bridge.sh --mode=manual-wasd "$@" > /tmp/carla.log 2>&1 < /dev/null & disown
 }
 
 # Function for launching Android Studio for Platform (ASfP)

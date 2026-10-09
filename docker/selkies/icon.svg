@@ -1,0 +1,21 @@
+<!--
+Copyright 2026 Google LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <path fill="#EA4335" d="M121.11,60.87l5.89,0.11l16.01-16.01l0.78-6.78C131.07,26.87,114.33,19.98,96,19.98c-33.19,0-61.18,22.57-69.48,53.17c1.75-1.21,5.48-0.31,5.48-0.31l32-5.26c0,0,1.66-2.72,2.47-2.55C73.79,57.02,84.32,51.98,96,51.98C105.5,51.98,114.24,55.32,121.11,60.87z"/>
+  <path fill="#4285F4" d="M165.5,73.19c-3.71-13.72-11.39-25.82-21.72-35.01l-22.68,22.68C130.18,68.2,136,79.42,136,91.98v4c11.03,0,20,8.97,20,20s-8.97,20-20,20H96L92,140v24l4,3.98h40c28.67,0,52-23.33,52-52C188,98.25,179.08,82.58,165.5,73.19z"/>
+  <path fill="#34A853" d="M56,167.98h39.97v-32H56c-2.94,0-5.72-0.65-8.24-1.8L42,135.95l-16.02,16.02l-1.4,5.41C33.31,164.02,44.2,167.98,56,167.98z"/>
+  <path fill="#FBBC05" d="M56,63.98c-28.67,0-52,23.33-52,52c0,16.88,8.09,31.91,20.6,41.41l23.19-23.19C40.85,131.06,36,124.08,36,115.98c0-11.03,8.97-20,20-20c8.1,0,15.08,4.85,18.22,11.79l23.19-23.19C87.91,72.07,72.88,63.98,56,63.98z"/>
+</svg>

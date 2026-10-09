@@ -97,7 +97,12 @@ RUN curl -fsSL -o /tmp/selkies.deb "${SELKIES_DEB_URL}" && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# 1c. Override the base image's Google Chrome wrapper, remove the Wayland
+# 1c. Rebrand the Selkies browser tab title and favicon
+COPY --chmod=644 docker/selkies/icon.svg /opt/selkies/lib/python3.12/site-packages/selkies/selkies_web/icon.svg
+COPY --chmod=644 docker/selkies/index.html /opt/selkies/lib/python3.12/site-packages/selkies/selkies_web/index.html
+COPY --chmod=644 docker/selkies/manifest.json /opt/selkies/lib/python3.12/site-packages/selkies/selkies_web/manifest.json
+
+# 1d. Override the base image's Google Chrome wrapper, remove the Wayland
 # ASfP Studio wrapper (replaced by the `asfp` bash function), and install the
 # Selkies launcher.
 #

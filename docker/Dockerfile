@@ -27,6 +27,7 @@
 #   - SOME/IP bridge and client orchestration scripts
 #   - AAOS (Android Automotive OS) latest release demo & patching utilities
 #   - Remote desktop stack: X11 + openbox + tint2 + Selkies NVENC H.264
+#   - Antigravity IDE
 # ==============================================================================
 
 ARG BASE_IMAGE
@@ -72,6 +73,7 @@ ARG CARLA_RUNTIME_PKGS="\
 # (https://github.com/selkies-project/selkies/issues/46), so a compositor in the
 # video path can only ever be an extra hop.
 ARG SELKIES_DEB_URL="https://github.com/selkies-project/selkies/releases/download/2.0.0rc0/selkies-2.0.0rc0-ubuntu24.04-amd64.deb"
+ARG ANTIGRAVITY_URL="https://storage.googleapis.com/antigravity-public/antigravity-hub/2.19.1-6046815158665216/linux-x64/Antigravity.tar.gz"
 ARG SELKIES_STACK_PKGS="\
   gnome-terminal \
   openbox \
@@ -105,8 +107,14 @@ RUN curl -fsSL -o /tmp/selkies.deb "${SELKIES_DEB_URL}" && \
 COPY --chmod=755 docker/scripts/bin/ /usr/local/bin/
 RUN rm -f /usr/local/bin/asfp-studio
 
-# Bypass the wrapper that assumes a wayland system.
-RUN ln -sf /usr/local/bin/google-chrome-stable /usr/local/bin/google-chrome
+# Bypass the wrapper that assumes a wayland system, and restore the
+# /usr/bin/google-chrome-stable symlink referenced by google-chrome.desktop
+# and /etc/alternatives/x-www-browser.
+RUN ln -sf /usr/local/bin/google-chrome-stable /usr/local/bin/google-chrome && \
+    ln -sf /usr/local/bin/google-chrome-stable /usr/bin/google-chrome-stable
+
+# 1d. Download and extract Antigravity IDE
+RUN curl -fsSL "${ANTIGRAVITY_URL}" | tar -xz -C /opt
 
 # 2. Standalone Python 3.7 environment with CARLA and SOME/IP dependencies
 COPY --from=python:3.7-slim /usr/local /opt/python3.7
@@ -143,6 +151,8 @@ COPY --chmod=644 docker/nginx/default.template /etc/nginx/sites-available/defaul
 COPY --chmod=644 docker/nginx/conf.d/ /etc/nginx/conf.d/
 COPY --chmod=755 docker/scripts/workstation-startup.d/ /etc/workstation-startup.d/
 COPY --chmod=644 docker/systemd/ /etc/systemd/system/
+COPY --chmod=644 docker/xdg/applications/antigravity.desktop /usr/share/applications/antigravity.desktop
+COPY --chmod=644 docker/xdg/openbox/rc.xml /etc/xdg/openbox/rc.xml
 COPY --chmod=644 docker/scripts/sdv-bashrc-hook/ /google/sdv-bashrc-hook/
 # Override the base image's user_setup.sh.
 COPY --chmod=751 docker/scripts/google/user_setup.sh /google/scripts/user_setup.sh

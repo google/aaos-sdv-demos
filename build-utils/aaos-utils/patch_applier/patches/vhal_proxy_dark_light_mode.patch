@@ -1,0 +1,98 @@
+diff --git a/vhal_proxy/sdv_emulated_vhal/VehicleService.textproto b/vhal_proxy/sdv_emulated_vhal/VehicleService.textproto
+index 162c73f..72f641b 100644
+--- a/vhal_proxy/sdv_emulated_vhal/VehicleService.textproto
++++ b/vhal_proxy/sdv_emulated_vhal/VehicleService.textproto
+@@ -20,6 +20,11 @@ publisher {
+   topic: "sdv-sample-vhal-proxy-range-remaining"
+ }
+ 
++subscriber {
++  message: "com.android.sdv.sample.vsidl_vhal_proxy_integration.NightMode"
++  topic: "vhal-night-mode"
++}
++
+ # -----------------------------------------------------------------
+ # Legacy ACLs for compatibility
+ # -----------------------------------------------------------------
+diff --git a/vhal_proxy/sdv_emulated_vhal/VhalProxySampleConfig.json b/vhal_proxy/sdv_emulated_vhal/VhalProxySampleConfig.json
+index bfb162b..8cf4e72 100644
+--- a/vhal_proxy/sdv_emulated_vhal/VhalProxySampleConfig.json
++++ b/vhal_proxy/sdv_emulated_vhal/VhalProxySampleConfig.json
+@@ -41,6 +41,26 @@
+           }
+         ],
+         "syntax": "proto3"
++      },
++      {
++        "name": "night_mode.proto",
++        "package": "com.android.sdv.sample.vsidl_vhal_proxy_integration",
++        "messageType": [
++          {
++            "name": "NightMode",
++            "field": [
++              {
++                "name": "on",
++                "number": 1,
++                "label": "LABEL_OPTIONAL",
++                "type": "TYPE_INT32",
++                "jsonName": "on"
++              }
++            ],
++            "options": {}
++          }
++        ],
++        "syntax": "proto2"
+       }
+     ]
+   },
+@@ -197,6 +217,49 @@
+           "serviceBundleName": "RangeRemainingPublisher"
+         }
+       ]
++    },
++    {
++      "property": {
++        "prop": 287310855,
++        "access": "READ",
++        "changeMode": "ON_CHANGE",
++        "configArray": [
++          1,
++          2,
++          3
++        ],
++        "configString": "YW55",
++        "minSampleRate": 1.0,
++        "maxSampleRate": 2.0
++      },
++      "defaultValue": {
++        "int32Values": [
++          0
++        ]
++      },
++      "messageMapping": {
++        "unitType": "com.android.sdv.sample.vsidl_vhal_proxy_integration.NightMode",
++        "fieldPath": "on",
++        "messageSize": 3,
++        "messageCount": 8,
++        "dtAction": "ACTION_SUBSCRIBE"
++      },
++      "areas": [
++        {
++          "area": {
++            "areaId": 0,
++            "access": "READ"
++          },
++          "defaultValue": {
++            "int32Values": [
++              0
++            ]
++          },
++          "unitName": "com-android-sdv-sample-vsidl-vhal-proxy-integration-night-mode-vhal-night-mode",
++          "packageName": "com.android.sdv.sample.gapb",
++          "serviceBundleName": "CarController"
++        }
++      ]
+     }
+   ]
+ }
+\ No newline at end of file

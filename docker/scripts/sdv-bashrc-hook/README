@@ -62,8 +62,12 @@ to finish in the bottom-right status bar.)[0m
 [1;38;5;25m3. Build and Test with the Antigravity AI Agent (Optional)[0m
 [38;5;250m────────────────────────────────────────────────────────────────────────────[0m
 
-Copy and paste this command to start the [1mAntigravity[0m command-line
-assistant in the terminal:
+Copy and paste this command to launch the [1mAntigravity IDE[0m desktop
+application:
+
+    [1;38;5;23;48;5;254m  antigravity-ide[0m
+
+Or start the [1mAntigravity[0m command-line assistant in the terminal:
 
     [1;38;5;23;48;5;254m  antigravity-cli  [0m
 

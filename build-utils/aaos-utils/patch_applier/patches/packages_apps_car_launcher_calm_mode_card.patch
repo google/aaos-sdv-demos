@@ -1,0 +1,70 @@
+diff --git a/app/AndroidManifest.xml b/app/AndroidManifest.xml
+index 7b5a9a9..a631154 100644
+--- a/app/AndroidManifest.xml
++++ b/app/AndroidManifest.xml
+@@ -172,6 +172,8 @@
+         </activity>
+         <activity android:name="com.android.car.carlauncher.calmmode.CalmModeActivity"
+             android:excludeFromRecents="true"
++            android:allowEmbedded="true"
++            android:resizeableActivity="true"
+             android:exported="true"
+             android:launchMode="singleInstance"
+             android:theme="@style/Theme.CalmMode">
+diff --git a/app/res/values/config.xml b/app/res/values/config.xml
+index c465166..ff89720 100644
+--- a/app/res/values/config.xml
++++ b/app/res/values/config.xml
+@@ -52,7 +52,7 @@
+          URI, for example:
+          "intent:#Intent;component=com.google.android.apps.maps/com.google.android.maps.LimitedMapsActivity;end"
+     -->
+-    <string name="config_smallCanvasOptimizedMapIntent" translatable="false"></string>
++    <string name="config_smallCanvasOptimizedMapIntent" translatable="false">intent:#Intent;component=com.android.car.carlauncher/.calmmode.CalmModeActivity;end</string>
+ 
+     <!-- An intent to start tos map activity when user has not accepted terms of service
+          URI, for example:
+diff --git a/app/src/com/android/car/carlauncher/CarLauncher.java b/app/src/com/android/car/carlauncher/CarLauncher.java
+index b4a3bec..9283025 100644
+--- a/app/src/com/android/car/carlauncher/CarLauncher.java
++++ b/app/src/com/android/car/carlauncher/CarLauncher.java
+@@ -184,8 +184,8 @@ public class CarLauncher extends FragmentActivity {
+                 if (!UserHelperLite.isHeadlessSystemUser(getUserId())) {
+                     mMapsCard = findViewById(R.id.maps_card);
+                     if (mMapsCard != null) {
+-                        setupRemoteCarTaskView(mMapsCard);
+-                        setupContentObserversForTos();
++                        getSupportFragmentManager().beginTransaction().replace(R.id.maps_card,
++                                new com.android.car.carlauncher.calmmode.CalmModeFragment()).commit();
+                     }
+                 }
+             } else {
+diff --git a/app/src/com/android/car/carlauncher/calmmode/CalmModeFragment.java b/app/src/com/android/car/carlauncher/calmmode/CalmModeFragment.java
+index 0bbd193..1e68c14 100644
+--- a/app/src/com/android/car/carlauncher/calmmode/CalmModeFragment.java
++++ b/app/src/com/android/car/carlauncher/calmmode/CalmModeFragment.java
+@@ -89,7 +89,7 @@ public final class CalmModeFragment extends Fragment {
+         mMediaTitleView = rootView.findViewById(R.id.media_title);
+         mShowEntryAnimations = true;
+ 
+-        hideStatusBar();
++        // hideStatusBar();
+         initExitOnClick();
+         initDate();
+         initNavState();
+@@ -234,14 +234,7 @@ public final class CalmModeFragment extends Fragment {
+         if (DEBUG) {
+             Log.v(TAG, "initExitOnTouch()");
+         }
+-        mContainerView.setOnClickListener((view) -> {
+-            if (DEBUG) {
+-                Log.v(TAG, "Detected touch, exiting Calm mode");
+-            }
+-            if (getActivity() != null) {
+-                getActivity().finish();
+-            }
+-        });
++        // Disabled exit-on-click so CalmMode remains persistent when embedded as home card.
+     }
+ 
+     private void initNavState() {

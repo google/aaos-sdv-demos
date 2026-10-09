@@ -24,4 +24,4 @@
 
 [Unit]
 Description=SDV remote desktop stack
-Wants=sdv-xserver.service sdv-openbox.service sdv-panel.service sdv-selkies.service sdv-terminal.service sdv-host-orchestrator.service
+Wants=sdv-xserver.service sdv-openbox.service sdv-panel.service sdv-selkies.service sdv-antigravity.service sdv-terminal.service sdv-host-orchestrator.service

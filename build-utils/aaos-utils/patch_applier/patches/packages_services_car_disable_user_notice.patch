@@ -1,0 +1,13 @@
+diff --git a/service/res/values/config.xml b/service/res/values/config.xml
+index 28f3302..dc0454d 100644
+--- a/service/res/values/config.xml
++++ b/service/res/values/config.xml
+@@ -513,7 +513,7 @@
+          necessary permission for TYPE_APPLICATION_OVERLAY window type. The UI package should
+          resolve permission by itself to use any higher priority window type.
+          Setting this string to empty will disable the feature. -->
+-    <string name="config_userNoticeUiService" translatable="false">com.google.android.car.kitchensink/.UserNoticeDemoUiService</string>
++    <string name="config_userNoticeUiService" translatable="false"></string>
+ 
+     <!-- Specifies the user picker to be launched on a secondary display when there is no user
+          allocation when the system boots and when a visible user stops.

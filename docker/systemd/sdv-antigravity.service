@@ -12,16 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# The terminal the user lands on, ready for `launch_carla`.
+# Initial Antigravity IDE window snapped to the left 40% of the desktop via
+# Openbox application rules (/etc/xdg/openbox/rc.xml).
 #
-# Restart=no and Type=oneshot: gnome-terminal is a thin D-Bus client that returns
-# as soon as the window is open, and if the user closes the window it should stay
-# closed.
+# Restart=no and Type=oneshot: /usr/local/bin/antigravity-ide spawns the IDE
+# detached, and if the user closes the window it should stay closed.
 #
 # No [Install] section on purpose: activation comes from sdv-desktop.target.
 
 [Unit]
-Description=SDV initial terminal window
+Description=SDV initial Antigravity IDE window
 Requires=sdv-openbox.service
 After=sdv-openbox.service
 
@@ -35,5 +35,6 @@ Environment=DISPLAY=:0
 Environment=LANG=en_US.UTF-8
 Environment=XDG_RUNTIME_DIR=/run/user/1000
 Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
-ExecStart=/usr/bin/gnome-terminal --geometry=110x32-60+60 --title="SDV Terminal (Run: launch_carla)"
+Environment=AGY_ADC_AUTH=true
+ExecStart=/usr/local/bin/antigravity-ide
 Restart=no

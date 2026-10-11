@@ -206,9 +206,8 @@ def get_initial_spawn_point(carla_map):
 
 
 class World(object):
-    def __init__(self, carla_world, hud, actor_filter, actor_generation, sync=False):
+    def __init__(self, carla_world, hud, actor_filter, actor_generation):
         self.world = carla_world
-        self.sync = sync
         self.hud = hud
         self.player = None
         self.initial_spawn_point = None
@@ -222,11 +221,10 @@ class World(object):
         self.restart()
         self.world.on_tick(hud.on_world_tick)
 
-        if self.sync:
-            settings = self.world.get_settings()
-            settings.synchronous_mode = True
-            settings.fixed_delta_seconds = 1.0 / 30.0
-            self.world.apply_settings(settings)
+        settings = self.world.get_settings()
+        settings.synchronous_mode = True
+        settings.fixed_delta_seconds = 1.0 / 30.0
+        self.world.apply_settings(settings)
 
     def restart(self):
         # Keep same camera config if the camera manager exists.
@@ -298,11 +296,10 @@ class World(object):
         self.hud.render(display)
 
     def destroy(self):
-        if self.sync:
-            settings = self.world.get_settings()
-            settings.synchronous_mode = False
-            settings.fixed_delta_seconds = None
-            self.world.apply_settings(settings)
+        settings = self.world.get_settings()
+        settings.synchronous_mode = False
+        settings.fixed_delta_seconds = None
+        self.world.apply_settings(settings)
 
         sensors = [
             self.camera_manager.sensor]
@@ -913,24 +910,26 @@ def game_loop(args):
     pygame.init()
     pygame.font.init()
     world = None
+    traffic_manager = None
 
     try:
         client = carla.Client(args.host, args.port)
         client.set_timeout(120.0)
+        traffic_manager = client.get_trafficmanager()
+        traffic_manager.set_synchronous_mode(True)
 
         display = pygame.display.set_mode(
             (args.width, args.height),
             pygame.HWSURFACE | pygame.DOUBLEBUF)
 
         hud = HUD(args.width, args.height)
-        world = World(client.get_world(), hud, args.filter, args.generation, sync=args.sync)
+        world = World(client.get_world(), hud, args.filter, args.generation)
         controller = DualControl(world, args.autopilot)
 
-        target_fps = 30 if args.sync else 60
+        target_fps = 30
         clock = pygame.time.Clock()
         while True:
-            if args.sync:
-                world.world.tick()
+            world.world.tick()
             clock.tick_busy_loop(target_fps)
             if controller.parse_events(world, clock):
                 return
@@ -939,6 +938,9 @@ def game_loop(args):
             pygame.display.flip()
 
     finally:
+
+        if traffic_manager is not None:
+            traffic_manager.set_synchronous_mode(False)
 
         if world is not None:
             world.destroy()
@@ -974,10 +976,6 @@ def main():
         '-a', '--autopilot',
         action='store_true',
         help='enable autopilot')
-    argparser.add_argument(
-        '--sync',
-        action='store_true',
-        help='Activate synchronous mode execution')
     argparser.add_argument(
         '--res',
         metavar='WIDTHxHEIGHT',

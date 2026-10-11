@@ -315,6 +315,8 @@ class CarlaSomeipBridge:
         self.mode = mode
         self.client = None
         self.world = None
+        self.traffic_manager = None
+        self.original_settings = None
         self.vehicle = None
         self.we_spawned_vehicle = False
 
@@ -323,6 +325,14 @@ class CarlaSomeipBridge:
         self.client = carla.Client(self.carla_host, self.carla_port)
         self.client.set_timeout(30.0)
         self.world = self.client.get_world()
+        if self.mode == BridgeMode.Auto:
+            self.traffic_manager = self.client.get_trafficmanager()
+            self.original_settings = self.world.get_settings()
+            settings = self.world.get_settings()
+            settings.synchronous_mode = True
+            settings.fixed_delta_seconds = 0.05
+            self.world.apply_settings(settings)
+            self.traffic_manager.set_synchronous_mode(True)
         await self.acquire_vehicle()
         return self.vehicle
 
@@ -340,6 +350,7 @@ class CarlaSomeipBridge:
             spawn_point = get_initial_spawn_point(self.world.get_map())
             self.vehicle = self.world.spawn_actor(blueprint, spawn_point)
             self.vehicle.set_autopilot(True)
+            self.world.tick()
             self.we_spawned_vehicle = True
             return self.vehicle
 
@@ -358,6 +369,10 @@ class CarlaSomeipBridge:
             await asyncio.sleep(1.0)
 
     def destroy(self):
+        if self.traffic_manager is not None:
+            self.traffic_manager.set_synchronous_mode(False)
+        if self.original_settings is not None and self.world is not None:
+            self.world.apply_settings(self.original_settings)
         if self.vehicle and self.we_spawned_vehicle:
             print(f"Destroying vehicle {self.vehicle.id}")
             self.vehicle.destroy()
@@ -651,6 +666,9 @@ async def run_bridge(mode: BridgeMode = BridgeMode.Auto):
         last_door_state = None
 
         while True:
+            if bridge.mode == BridgeMode.Auto:
+                bridge.world.tick()
+
             # 0. Check if vehicle is still active. If not, re-acquire.
             if bridge.vehicle is None or not bridge.vehicle.is_alive:
                 print("\n[Bridge] Vehicle lost or inactive. Re-acquiring...")
@@ -834,7 +852,7 @@ async def run_bridge(mode: BridgeMode = BridgeMode.Auto):
                 )
                 bridge.vehicle = None  # Force re-acquisition
 
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.05)
     except (KeyboardInterrupt, asyncio.CancelledError):
         print("\nShutting down...")
     except Exception as e:

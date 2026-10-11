@@ -20,7 +20,6 @@
 MACHINE="tmot-gpu-us.c.googlers.com"
 REMOTE_BRIDGE=""
 REMOTE_PATH="$HOME/Workspace/sdv-demos"
-SYNC_MODE=false
 WITH_DISPLAY=false
 
 # --- Argument Parsing ---
@@ -48,20 +47,16 @@ while [[ "$#" -gt 0 ]]; do
       REMOTE_PATH="$2"
       shift
       ;;
-    --sync)
-      SYNC_MODE=true
-      ;;
     --withDisplay)
       WITH_DISPLAY=true
       ;;
     --help)
-      echo "Usage: $0 [--machine=HOST] [--remote-bridge=HOST] [--remote-path=PATH] [--sync] [--withDisplay]"
+      echo "Usage: $0 [--machine=HOST] [--remote-bridge=HOST] [--remote-path=PATH] [--withDisplay]"
       echo ""
       echo "Arguments:"
       echo "  --machine=HOST        Remote GPU machine hostname (default: $MACHINE)"
       echo "  --remote-bridge=HOST  Remote manyCPU machine hostname for SOME/IP bridge"
       echo "  --remote-path=PATH    Path to repo on remote machine (default: $REMOTE_PATH)"
-      echo "  --sync                Enable synchronous mode (default: false)"
       echo "  --withDisplay         Run full client with camera rendering (default: false)"
       exit 0
       ;;
@@ -129,18 +124,13 @@ TUNNEL_PID=$!
   sleep 15
   echo "Starting local steering wheel control client..."
 
-  SYNC_FLAG=""
-  if [ "$SYNC_MODE" = true ]; then
-    SYNC_FLAG="--sync"
-  fi
-
   if [ "$WITH_DISPLAY" = true ]; then
     echo "Mode: Windowed (1920x1080)"
     # Ensure we are in the correct directory for wheel_config.ini
-    (cd external_utils && "$PYTHON_EXEC" manual_control_steeringwheel.py --host 127.0.0.1 --res 1920x1080 $SYNC_FLAG)
+    (cd external_utils && "$PYTHON_EXEC" manual_control_steeringwheel.py --host 127.0.0.1 --res 1920x1080)
   else
     echo "Mode: Steering only (No camera rendering)"
-    (cd external_utils && "$PYTHON_EXEC" steering_control.py --host 127.0.0.1 $SYNC_FLAG)
+    (cd external_utils && "$PYTHON_EXEC" steering_control.py --host 127.0.0.1)
   fi
 ) &
 # shellcheck disable=SC2034

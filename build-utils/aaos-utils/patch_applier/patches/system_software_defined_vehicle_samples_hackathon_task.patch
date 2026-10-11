@@ -1,0 +1,564 @@
+diff --git a/car_controller/apex/Android.bp b/car_controller/apex/Android.bp
+index cd253af..73072c6 100644
+--- a/car_controller/apex/Android.bp
++++ b/car_controller/apex/Android.bp
+@@ -21,6 +21,7 @@ apex {
+     name: "com.android.sdv.sample.gapb",
+     native_shared_libs: [
+         "libsdv_lm_car_controller",
++        "libsdv_lm_airbag_tester",
+     ],
+     // Security contexts to files in the APEX.
+     file_contexts: "file_contexts",
+@@ -36,10 +37,11 @@ apex {
+         "com.android.sdv.sample.gapb.linker-config",
+         // Permissions policy files.
+         "com.android.sdv.sample.gapb.CarController.permissions.config",
++        "com.android.sdv.sample.gapb.AirbagTester.permissions.config",
+         // Orchestration configuration.
+         "com_android_sdv_sample_gapb_orchestration_configurations",
+         "com.android.sdv.sample.car_controller.orch.config",
+-        "com.android.sdv.sample.gapb-vsidl-config.binpb",
++        "com.android.sdv.sample.airbag_tester.orch.config",
+     ],
+     // Name of the apex_key module that provides the private key to sign the APEX bundle.
+     key: "com.android.sdv.samples.key",
+diff --git a/car_controller/apex/sdv_service_bundles_manifest.textproto b/car_controller/apex/sdv_service_bundles_manifest.textproto
+index 50fb8b6..155fc0e 100644
+--- a/car_controller/apex/sdv_service_bundles_manifest.textproto
++++ b/car_controller/apex/sdv_service_bundles_manifest.textproto
+@@ -22,5 +22,12 @@ sdv_service_bundle_metadata {
+   authorization_policy_path: "etc/permissions/com.android.sdv.sample.gapb.CarController.permissions"
+   orchestration_config_path: "etc/orch/car_controller.config"
+   native_library_path: "lib64/libsdv_lm_car_controller.so"
+-  vsidl_schemas_path: "etc/vsidl_provider/vsidl-config.binpb"
++}
++sdv_service_bundle_metadata {
++  name: "AirbagTester"
++  version_number: 0
++  version_name: "0.1 Alpha"
++  authorization_policy_path: "etc/permissions/com.android.sdv.sample.gapb.AirbagTester.permissions"
++  orchestration_config_path: "etc/orch/airbag_tester.config"
++  native_library_path: "lib64/libsdv_lm_airbag_tester.so"
+ }
+diff --git a/car_controller/catalog/car_controller.vsidl b/car_controller/catalog/car_controller.vsidl
+index 4bdcd32..347a580 100644
+--- a/car_controller/catalog/car_controller.vsidl
++++ b/car_controller/catalog/car_controller.vsidl
+@@ -89,3 +89,13 @@ service_bundle {
+   }
+ 
+ }
++
++service_bundle {
++  name: "AirbagTester"
++
++  publisher {
++    message: "com.sdv.google.display_safety.TellTaleStatus"
++    topic: "airbag"
++    capacity: 8
++  }
++}
+diff --git a/car_controller/configs/orchestration/Android.bp b/car_controller/configs/orchestration/Android.bp
+index 1661b9e..fbe1c80 100644
+--- a/car_controller/configs/orchestration/Android.bp
++++ b/car_controller/configs/orchestration/Android.bp
+@@ -28,6 +28,19 @@ prebuilt_etc {
+     installable: false,
+ }
+ 
++// Orchestration configuration for AirbagTester service bundle.
++prebuilt_etc {
++    name: "com.android.sdv.sample.airbag_tester.orch.config",
++    src: "airbag_tester_config.textproto",
++    // Subdirectory under which the file(s) to be installed into.
++    sub_dir: "orch",
++    // Filename is used in sdv service bundle metadata manifest.
++    filename: "airbag_tester.config",
++    // Disable direct installation of the configuration to one of the partitions.
++    // The configuration will be used only inside of service bundles registry apexes.
++    installable: false,
++}
++
+ // Global (SDV VM instance) orchestration configurations.
+ // Path to file must be set with the `persist.sdv.orchestrator_config_path`
+ // system property.
+diff --git a/car_controller/configs/orchestration/airbag_tester_config.textproto b/car_controller/configs/orchestration/airbag_tester_config.textproto
+new file mode 100644
+index 0000000..6730f9c
+--- /dev/null
++++ b/car_controller/configs/orchestration/airbag_tester_config.textproto
+@@ -0,0 +1,51 @@
++# Copyright (C) 2026 The Android Open Source Project
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#      http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++#
++# proto-file: system/software_defined_vehicle/orchestration/distributed_config/src/protos/service_bundle_config.proto
++# proto-message: ServiceBundleConfig
++
++# Service bundle FQIN with instance.
++package_name: "com.android.sdv.sample.gapb"
++service_bundle_name: "AirbagTester"
++instance: "instance"
++
++# Connect into the VM auto_start group
++group_mapping {
++    group: "vm_gapb_auto_start"
++    instance: "instance"
++}
++
++# Start `instance` service bundles when system is started.
++state {
++    condition {
++        or {
++            power_state: "ON"
++            power_state: "POWER_OFF_EXIT"
++            power_state: "SUSPEND_TO_RAM_EXIT"
++        }
++    }
++    instances_states { started: "instance" }
++}
++
++# Stop `auto_start` service bundles when system is suspending to RAM.
++state {
++    condition {
++        or {
++            power_state: "SUSPEND_TO_RAM_ENTER"
++            power_state: "WAIT_FOR_FINISH"
++            power_state: "SUSPEND_TO_RAM_POST_FINISH"
++        }
++    }
++    instances_states { created: "instance" }
++}
+diff --git a/car_controller/configs/permissions/Android.bp b/car_controller/configs/permissions/Android.bp
+index 8e4e8d7..8d43150 100644
+--- a/car_controller/configs/permissions/Android.bp
++++ b/car_controller/configs/permissions/Android.bp
+@@ -26,3 +26,15 @@ prebuilt_etc {
+     // The manifest will be used only inside of service bundles registry apexes.
+     installable: false,
+ }
++
++// Permissions policy for AirbagTester service bundle.
++prebuilt_etc {
++    name: "com.android.sdv.sample.gapb.AirbagTester.permissions.config",
++    sub_dir: "permissions",
++    src: "com.android.sdv.sample.gapb.AirbagTester.permissions.textproto",
++    // Filename is used in sdv service bundle metadata manifest.
++    filename: "com.android.sdv.sample.gapb.AirbagTester.permissions",
++    // Disable direct installation of the manifest to one of the partitions.
++    // The manifest will be used only inside of service bundles registry apexes.
++    installable: false,
++}
+diff --git a/car_controller/configs/permissions/com.android.sdv.sample.gapb.AirbagTester.permissions.textproto b/car_controller/configs/permissions/com.android.sdv.sample.gapb.AirbagTester.permissions.textproto
+new file mode 100644
+index 0000000..09ce407
+--- /dev/null
++++ b/car_controller/configs/permissions/com.android.sdv.sample.gapb.AirbagTester.permissions.textproto
+@@ -0,0 +1,29 @@
++# Copyright (C) 2026 The Android Open Source Project
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#      http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++#
++# proto-file: //system/software_defined_vehicle/middleware/service_authz/proto/sdv/authz/policy/authz_policy.proto
++# proto-message: AuthzPolicy
++
++publisher {
++  message: "com.sdv.google.display_safety.TellTaleStatus"
++  topic: "airbag"
++  topic: "com-sdv-google-display-safety-tell-tale-status-airbag"
++}
++
++##############
++# ACL Legacy #
++##############
++acls { name: "Reader" include: "*" }
++service_units { name: "com-sdv-google-display-safety-tell-tale-status-airbag" acl_names: "Reader" }
++service_units { name: "airbag" acl_names: "Reader" }
+diff --git a/car_controller/generated_rs/service_bundles/com/android/sdv/sample/gapb/airbag_tester/Android.bp b/car_controller/generated_rs/service_bundles/com/android/sdv/sample/gapb/airbag_tester/Android.bp
+new file mode 100644
+index 0000000..1c89b24
+--- /dev/null
++++ b/car_controller/generated_rs/service_bundles/com/android/sdv/sample/gapb/airbag_tester/Android.bp
+@@ -0,0 +1,45 @@
++// Copyright (C) 2026 The Android Open Source Project
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//     http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++//! WARNING: DO NOT EDIT.
++//! WARNING: This file is generated by VSIDL middleware code generator.
++//! WARNING: Changes will be overwritten when the file is regenerated.
++
++package {
++    default_applicable_licenses: ["Android-Apache-2.0"],
++}
++
++rust_library {
++    name: "libsdv_mw_rs_com_android_sdv_sample_gapb_airbag_tester",
++    crate_name: "sdv_mw_rs_com_android_sdv_sample_gapb_airbag_tester",
++    crate_root: "service_bundle.rs",
++    srcs: [
++        "service_bundle.rs",
++    ],
++    use_expansive_default_srcs: false,
++    rustlibs: [
++        "libprotobuf",
++        "liblog_rust",
++        "libsdv_rs",
++        "libfutures",
++        "libsomeip_messages_catalog",
++        "libsdv_proto_reflection_rs",
++    ],
++    apex_available: [
++        "//apex_available:platform",
++        "//apex_available:anyapex",
++    ],
++    vendor_available: true,
++    product_available: true,
++    min_sdk_version: "35",
++}
+diff --git a/car_controller/generated_rs/service_bundles/com/android/sdv/sample/gapb/airbag_tester/service_bundle.rs b/car_controller/generated_rs/service_bundles/com/android/sdv/sample/gapb/airbag_tester/service_bundle.rs
+new file mode 100644
+index 0000000..da98532
+--- /dev/null
++++ b/car_controller/generated_rs/service_bundles/com/android/sdv/sample/gapb/airbag_tester/service_bundle.rs
+@@ -0,0 +1,91 @@
++// Copyright (C) 2026 The Android Open Source Project
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//     http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++//! WARNING: DO NOT EDIT.
++//! WARNING: This file is generated by VSIDL middleware code generator.
++//! WARNING: Changes will be overwritten when the file is regenerated.
++
++/// Namespace for publication descriptors available to the service bundle.
++pub struct PublisherDescriptors<Proto>(std::marker::PhantomData<Proto>);
++
++impl PublisherDescriptors<someip_messages_catalog::vehicledata::TellTaleStatus> {
++    /// Publisher descriptor 'airbag' of 'com.sdv.google.display_safety.TellTaleStatus'
++    pub const AIRBAG: &sdv::mw::clientlib::PublisherDescriptor<
++        someip_messages_catalog::vehicledata::TellTaleStatus,
++    > = {
++        &sdv::mw::clientlib::PublisherDescriptor::new("airbag")
++            .with_message("com.sdv.google.display_safety.TellTaleStatus")
++            .with_service_unit_name("com-sdv-google-display-safety-tell-tale-status-airbag")
++            .with_capacity(8)
++            .with_max_message_size(2)
++    };
++
++    /// List of all publisher descriptors of 'com.sdv.google.display_safety.TellTaleStatus' available to the service bundle
++    pub const ALL_VARIANTS: &[&sdv::mw::clientlib::PublisherDescriptor<
++        someip_messages_catalog::vehicledata::TellTaleStatus,
++    >] = &[Self::AIRBAG];
++}
++
++/// Service bundle
++pub struct AirbagTester {
++    _comms: std::sync::Arc<dyn sdv::mw::Communicate>,
++}
++
++impl AirbagTester {
++    /// Creates a new instance of the service bundle
++    #[deprecated(since = "2.0.0", note = "please use `builder` instead")]
++    pub async fn new(
++        comms: std::sync::Arc<dyn sdv::mw::Communicate>,
++    ) -> sdv::status::SdvResult<Self> {
++        let service = Self { _comms: comms.clone() };
++        Ok(service)
++    }
++
++    /// returns a Builder for AirbagTester
++    pub fn builder() -> AirbagTesterBuilder {
++        AirbagTesterBuilder::default()
++    }
++}
++
++#[derive(Clone, Default)]
++/// builder for AirbagTester
++pub struct AirbagTesterBuilder {
++    comms: Option<std::sync::Arc<dyn sdv::mw::Communicate>>,
++}
++
++impl AirbagTesterBuilder {
++    /// Sets the communication layer for the `AirbagTester`.
++    ///
++    /// # Arguments
++    /// * `comms` - An `Arc` pointing to a `Communicate` trait object.
++    pub fn set_comms(mut self, comms: std::sync::Arc<dyn sdv::mw::Communicate>) -> Self {
++        self.comms = Some(comms);
++        self
++    }
++    /// Creates an instance of `AirbagTester`.
++    ///
++    /// # Errors
++    /// Returns an `SdvStatus` with `SdvStatusCode::InvalidArgument` if `comms` has not been set.
++    pub async fn build(self) -> sdv::status::SdvResult<AirbagTester> {
++        let comms = self.comms.ok_or_else(|| {
++            sdv::status::SdvStatus::with_message(
++                sdv::status::SdvStatusCode::InvalidArgument,
++                "No comms is found in AirbagTesterBuilder",
++            )
++        })?;
++
++        let service = AirbagTester { _comms: comms.clone() };
++
++        Ok(service)
++    }
++}
+diff --git a/car_controller/services/AirbagTester/Android.bp b/car_controller/services/AirbagTester/Android.bp
+new file mode 100644
+index 0000000..d29cc59
+--- /dev/null
++++ b/car_controller/services/AirbagTester/Android.bp
+@@ -0,0 +1,43 @@
++// Copyright (C) 2026 The Android Open Source Project
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//     http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++package {
++    default_applicable_licenses: ["Android-Apache-2.0"],
++    default_team: "trendy_team_automotive",
++}
++
++rust_ffi_shared {
++    name: "libsdv_lm_airbag_tester",
++    srcs: ["src/main.rs"],
++    defaults: [
++        "sdv_tracing@rust_defaults",
++    ],
++    crate_name: "sdv_lm_airbag_tester",
++    product_specific: true,
++    rustlibs: [
++        "libtokio",
++        "libtokio_util",
++        "libsdv_rs",
++        "libsdv_mw_rs_com_android_sdv_sample_gapb_airbag_tester",
++        "liblog_rust",
++        "libprotobuf",
++        "libsomeip_messages_catalog",
++        "libsdv_status_rs",
++    ],
++    apex_available: [
++        "//apex_available:platform",
++        "//apex_available:anyapex",
++    ],
++    min_sdk_version: "35",
++}
+diff --git a/car_controller/services/AirbagTester/src/main.rs b/car_controller/services/AirbagTester/src/main.rs
+new file mode 100644
+index 0000000..feecae8
+--- /dev/null
++++ b/car_controller/services/AirbagTester/src/main.rs
+@@ -0,0 +1,104 @@
++// Copyright (C) 2026 The Android Open Source Project
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//     http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++//! Shared library implementing 'AirbagTester' service bundle logic.
++#![allow(unused_imports)]
++
++use log::{debug, error, info, warn};
++use sdv::mw::clientlib::create_publisher;
++use sdv::mw::SdvComms;
++use someip_messages_catalog::vehicledata::TellTaleStatus;
++use std::sync::Arc;
++use std::time::Duration;
++use tokio::time::sleep;
++use tokio_util::sync::CancellationToken;
++
++sdv::lifecycle::register_service_bundle!(AirbagTesterServiceBundle);
++
++struct AirbagTesterServiceBundle {
++    cancellation_token: Option<CancellationToken>,
++    context: ContextRef,
++}
++
++impl ServiceBundle for AirbagTesterServiceBundle {
++    fn new(context: ContextRef) -> Self {
++        if let Err(err) = sdv::tracing::try_init_tracing() {
++            warn!("Failed to init service bundles tracing: {err}");
++        }
++        Self { cancellation_token: None, context }
++    }
++
++    fn on_start(&mut self) {
++        debug!("on_start called for AirbagTester service bundle...");
++        let context = self.context;
++        let cancellation_token = CancellationToken::new();
++        self.cancellation_token = Some(cancellation_token.clone());
++        let Ok(runtime) =
++            tokio::runtime::Builder::new_current_thread().enable_time().enable_io().build()
++        else {
++            panic!("Failed to start the runtime!");
++        };
++        debug!("spawning thread for AirbagTester service bundle...");
++        let _ = std::thread::spawn(move || {
++            runtime.block_on(async move {
++                let comms = Arc::new(SdvComms { context });
++                debug!("Calling sdv_main for AirbagTester...");
++                let res = tokio::select! {
++                    res = sdv_main(comms) => res,
++                    () = cancellation_token.cancelled() => {
++                        Err(sdv::status::SdvStatus::new(sdv::status::SdvStatusCode::Cancelled))
++                    }
++                };
++                error!("AirbagTester service bundle loop stopped: {res:?}.");
++            });
++            drop(runtime);
++        });
++    }
++
++    fn on_stop(&mut self) {
++        if let Some(token) = self.cancellation_token.take() {
++            token.cancel();
++        }
++    }
++}
++
++#[allow(unused_variables,unused_mut,unreachable_code)]
++async fn sdv_main(comms: Arc<SdvComms>) -> sdv::status::SdvResult<()> {
++    info!("Starting service bundle 'AirbagTester'");
++
++    let publisher = create_publisher(
++        comms.as_ref(),
++        sdv_mw_rs_com_android_sdv_sample_gapb_airbag_tester::PublisherDescriptors::<
++            TellTaleStatus,
++        >::AIRBAG,
++    )
++    .await?;
++
++    info!("Airbag publisher created successfully in AirbagTester");
++
++    let mut telltale_alert = false;
++    // loop {
++    //     sleep(Duration::from_secs(5)).await;
++    //     telltale_alert = !telltale_alert;
++
++    //     let mut status = TellTaleStatus::new();
++    //     status.alert = telltale_alert;
++
++    //     info!("AirbagTester publishing TellTaleStatus for airbag: alert={telltale_alert}");
++    //     if let Err(e) = publisher.publish(&status) {
++    //         warn!("Failed to publish airbag TellTaleStatus: {e:?}");
++    //     }
++    // }
++    Ok(())
++}
+diff --git a/car_controller/services/CarController/src/main.rs b/car_controller/services/CarController/src/main.rs
+index 6f60178..399173c 100644
+--- a/car_controller/services/CarController/src/main.rs
++++ b/car_controller/services/CarController/src/main.rs
+@@ -198,6 +198,7 @@ async fn monitor_ambient_state(
+     Ok(())
+ }
+ 
++#[allow(unused_variables,unused_mut)]
+ async fn control_headlights(
+     comms: Arc<SdvComms>,
+     ambient_state: watch::Receiver<AmbientState>,
+@@ -213,17 +214,17 @@ async fn control_headlights(
+ 
+     let mut updates = WatchStream::new(ambient_state);
+ 
+-    while let Some(state) = updates.next().await {
+-        let command = LightCommand {
+-            park_lights_on: state.is_night || state.is_fog,
+-            fog_lights_on: state.is_fog,
+-            lowbeam_on: state.is_night,
+-            highbeam_on: state.is_night && state.is_fog,
+-            ..Default::default()
+-        };
+-        info!("Publishing LightCommand: {command:?}");
+-        headlight_command_publisher.publish(&command)?;
+-    }
++    // while let Some(state) = updates.next().await {
++    //     let command = LightCommand {
++    //         park_lights_on: state.is_night || state.is_fog,
++    //         fog_lights_on: state.is_fog,
++    //         lowbeam_on: state.is_night,
++    //         highbeam_on: state.is_night && state.is_fog,
++    //         ..Default::default()
++    //     };
++    //     info!("Publishing LightCommand: {command:?}");
++    //     headlight_command_publisher.publish(&command)?;
++    // }
+     Ok(())
+ }
+ 
+diff --git a/vhal_proxy/sdv_emulated_vhal/VhalProxySampleConfig.json b/vhal_proxy/sdv_emulated_vhal/VhalProxySampleConfig.json
+index 8cf4e72..f5802ab 100644
+--- a/vhal_proxy/sdv_emulated_vhal/VhalProxySampleConfig.json
++++ b/vhal_proxy/sdv_emulated_vhal/VhalProxySampleConfig.json
+@@ -255,11 +255,11 @@
+               0
+             ]
+           },
+-          "unitName": "com-android-sdv-sample-vsidl-vhal-proxy-integration-night-mode-vhal-night-mode",
++          "unitName": "com-android-sdv-sample-vsidl-vhal-proxy-integration-night-mode-vhal-nTYPOight-mode",
+           "packageName": "com.android.sdv.sample.gapb",
+           "serviceBundleName": "CarController"
+         }
+       ]
+     }
+   ]
+-}
+\ No newline at end of file
++}

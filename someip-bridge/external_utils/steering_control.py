@@ -139,9 +139,8 @@ def get_initial_spawn_point(carla_map):
 
 
 class World(object):
-    def __init__(self, carla_world, hud, actor_filter, actor_generation, sync=False):
+    def __init__(self, carla_world, hud, actor_filter, actor_generation):
         self.world = carla_world
-        self.sync = sync
         self.hud = hud
         self.player = None
         self.initial_spawn_point = None
@@ -154,11 +153,10 @@ class World(object):
         self.restart()
         self.world.on_tick(hud.on_world_tick)
 
-        if self.sync:
-            settings = self.world.get_settings()
-            settings.synchronous_mode = True
-            settings.fixed_delta_seconds = 1.0 / 30.0
-            self.world.apply_settings(settings)
+        settings = self.world.get_settings()
+        settings.synchronous_mode = True
+        settings.fixed_delta_seconds = 1.0 / 30.0
+        self.world.apply_settings(settings)
 
     def restart(self):
         # Get a random blueprint.
@@ -217,11 +215,10 @@ class World(object):
         self.hud.render(display)
 
     def destroy(self):
-        if self.sync:
-            settings = self.world.get_settings()
-            settings.synchronous_mode = False
-            settings.fixed_delta_seconds = None
-            self.world.apply_settings(settings)
+        settings = self.world.get_settings()
+        settings.synchronous_mode = False
+        settings.fixed_delta_seconds = None
+        self.world.apply_settings(settings)
         if self.player is not None:
             self.player.destroy()
 
@@ -480,24 +477,26 @@ def game_loop(args):
     pygame.init()
     pygame.font.init()
     world = None
+    traffic_manager = None
 
     try:
         client = carla.Client(args.host, args.port)
         client.set_timeout(10.0)
+        traffic_manager = client.get_trafficmanager()
+        traffic_manager.set_synchronous_mode(True)
 
         display = pygame.display.set_mode(
             (args.width, args.height),
             pygame.HWSURFACE | pygame.DOUBLEBUF)
 
         hud = HUD(args.width, args.height)
-        world = World(client.get_world(), hud, args.filter, args.generation, sync=args.sync)
+        world = World(client.get_world(), hud, args.filter, args.generation)
         controller = DualControl(world, args.autopilot)
 
-        target_fps = 30 if args.sync else 60
+        target_fps = 30
         clock = pygame.time.Clock()
         while True:
-            if args.sync:
-                world.world.tick()
+            world.world.tick()
             clock.tick_busy_loop(target_fps)
             if controller.parse_events(world, clock):
                 return
@@ -506,6 +505,8 @@ def game_loop(args):
             pygame.display.flip()
 
     finally:
+        if traffic_manager is not None:
+            traffic_manager.set_synchronous_mode(False)
         if world is not None:
             world.destroy()
         pygame.quit()
@@ -516,7 +517,6 @@ def main():
     argparser.add_argument('--host', metavar='H', default='127.0.0.1', help='IP of the host server (default: 127.0.0.1)')
     argparser.add_argument('-p', '--port', metavar='P', default=2000, type=int, help='TCP port to listen to (default: 2000)')
     argparser.add_argument('-a', '--autopilot', action='store_true', help='enable autopilot')
-    argparser.add_argument('--sync', action='store_true', help='Activate synchronous mode execution')
     argparser.add_argument('--res', metavar='WIDTHxHEIGHT', default='400x300', help='window resolution (default: 400x300)')
     argparser.add_argument('--filter', metavar='PATTERN', default='vehicle.mini*', help='actor filter (default: "vehicle.mini*")')
     argparser.add_argument('--generation', metavar='G', default='2', help='restrict to certain actor generation (values: "1","2","All" - default: "2")')

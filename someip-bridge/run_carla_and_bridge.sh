@@ -28,10 +28,14 @@ CAMERA_CLIENT_PATH="${SCRIPT_DIR}/external_utils/camera_display.py"
 #   --doNotRunBridge: If set, the bridge script is not started.
 #   --quality=QUALITY: Set CARLA quality level (Low, Epic).
 #   --spawnCameraClient: Launches the camera display client locally.
+#   --enable-camera-stream: Streams rear-view camera to Cuttlefish virtio-media FIFO (/tmp/v4l2_fifo).
+#   --camera-fifo-path=PATH: Custom FIFO path for rear camera stream (also enables camera streaming).
 #   -d, --carla-dir=DIR: Custom CARLA installation directory (default: ~/Workspace/carla-installation)
 MODE=""
 RUN_BRIDGE=true
 SPAWN_CAMERA=false
+ENABLE_CAMERA_STREAM=false
+CAMERA_FIFO_PATH=""
 QUALITY="Epic"
 OPENGL=false
 REMOTE_BRIDGE=""
@@ -49,6 +53,15 @@ while [[ $# -gt 0 ]]; do
       ;;
     --spawnCameraClient)
       SPAWN_CAMERA=true
+      shift
+      ;;
+    --enable-camera-stream)
+      ENABLE_CAMERA_STREAM=true
+      shift
+      ;;
+    --camera-fifo-path=*)
+      CAMERA_FIFO_PATH="${1#*=}"
+      ENABLE_CAMERA_STREAM=true
       shift
       ;;
     --quality=*)
@@ -81,12 +94,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     -h | --help)
       echo "Usage: $(basename "$0") [options]"
-      echo "  --mode=MODE           Simulation mode: auto, manual-wasd, manual-wheel"
-      echo "  -d, --carla-dir=DIR   CARLA installation path (default: ~/Workspace/carla-installation)"
-      echo "  --quality=QUALITY     CARLA render quality (default: Epic, or Low)"
-      echo "  --opengl              Use OpenGL renderer instead of Vulkan"
-      echo "  --spawnCameraClient   Launch external camera display window"
-      echo "  --doNotRunBridge      Launch CARLA simulator only without SOME/IP bridge"
+      echo "  --mode=MODE                 Simulation mode: auto, manual-wasd, manual-wheel"
+      echo "  -d, --carla-dir=DIR         CARLA installation path (default: ~/Workspace/carla-installation)"
+      echo "  --quality=QUALITY           CARLA render quality (default: Epic, or Low)"
+      echo "  --opengl                    Use OpenGL renderer instead of Vulkan"
+      echo "  --spawnCameraClient         Launch external camera display window"
+      echo "  --enable-camera-stream      Stream rear-view camera to Cuttlefish FIFO (/tmp/v4l2_fifo)"
+      echo "  --camera-fifo-path=PATH     Custom named pipe path for rear camera stream"
+      echo "  --doNotRunBridge            Launch CARLA simulator only without SOME/IP bridge"
       exit 0
       ;;
     *)
@@ -193,19 +208,30 @@ if [ "$MODE" == "manual-wasd" ]; then
 fi
 
 if [ "$RUN_BRIDGE" = true ]; then
+  CAMERA_BRIDGE_ARGS=()
+  CAMERA_BRIDGE_ARGS_STR=""
+  if [ "$ENABLE_CAMERA_STREAM" = true ]; then
+    CAMERA_BRIDGE_ARGS+=("--enable-camera-stream")
+    CAMERA_BRIDGE_ARGS_STR+=" --enable-camera-stream"
+  fi
+  if [ -n "$CAMERA_FIFO_PATH" ]; then
+    CAMERA_BRIDGE_ARGS+=("--camera-fifo-path=$CAMERA_FIFO_PATH")
+    CAMERA_BRIDGE_ARGS_STR+=" --camera-fifo-path='$CAMERA_FIFO_PATH'"
+  fi
+
   if [ -n "$REMOTE_BRIDGE" ]; then
     # --- Remote Bridge Setup ---
     echo "Starting REMOTE CARLA-SOME/IP Bridge on $REMOTE_BRIDGE..."
     # Forward CARLA ports (2000, 2001, 2002) from A to B and run the bridge on B
     ssh -tt -o ExitOnForwardFailure=yes -o ServerAliveInterval=10 \
       -R 2000:localhost:2000 -R 2001:localhost:2001 -R 2002:localhost:2002 "$REMOTE_BRIDGE" \
-      "cd $REMOTE_PATH && ( [ -x .venv/bin/python ] && .venv/bin/python carla_someip_client.py --mode='$MODE' || ( command -v python3.7 > /dev/null 2>&1 && python3.7 carla_someip_client.py --mode='$MODE' || python3 carla_someip_client.py --mode='$MODE' ) )" &
+      "cd $REMOTE_PATH && ( [ -x .venv/bin/python ] && .venv/bin/python carla_someip_client.py --mode='$MODE'$CAMERA_BRIDGE_ARGS_STR || ( command -v python3.7 > /dev/null 2>&1 && python3.7 carla_someip_client.py --mode='$MODE'$CAMERA_BRIDGE_ARGS_STR || python3 carla_someip_client.py --mode='$MODE'$CAMERA_BRIDGE_ARGS_STR ) )" &
     BRIDGE_PID=$!
     MONITORED_PIDS+=("$BRIDGE_PID")
   else
     # --- Local Bridge Setup ---
-    echo "Starting local CARLA-SOME/IP Bridge with mode: $MODE"
-    "$PYTHON_EXEC" "${SCRIPT_DIR}/carla_someip_client.py" --mode="$MODE" &
+    echo "Starting local CARLA-SOME/IP Bridge with mode: $MODE ${CAMERA_BRIDGE_ARGS[*]}"
+    "$PYTHON_EXEC" "${SCRIPT_DIR}/carla_someip_client.py" --mode="$MODE" "${CAMERA_BRIDGE_ARGS[@]}" &
     BRIDGE_PID=$!
     MONITORED_PIDS+=("$BRIDGE_PID")
   fi

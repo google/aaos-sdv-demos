@@ -135,6 +135,7 @@ RUN python3.7 -m pip install --no-cache-dir --ignore-requires-python --require-h
 COPY --chmod=755 build-utils/carla915-utils/ /google/carla915-utils/
 
 # 4. SOME/IP Bridge & Client Utilities
+COPY --chmod=644 someip-bridge/camera_streamer.py /google/someip-bridge/camera_streamer.py
 COPY --chmod=644 someip-bridge/carla_someip_client.py /google/someip-bridge/carla_someip_client.py
 COPY --chmod=644 someip-bridge/get_data_logic.py /google/someip-bridge/get_data_logic.py
 COPY --chmod=755 someip-bridge/run_carla_and_bridge.sh /google/someip-bridge/run_carla_and_bridge.sh

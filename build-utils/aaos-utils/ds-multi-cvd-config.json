@@ -47,12 +47,23 @@
         "guest_enforce_security": "false"
       },
       "graphics": {
-        "gpu_mode": "gfxstream",
+        "gpu_mode": "gfxstream_guest_angle",
         "displays": [
           {
             "width": 1920,
             "height": 1080,
             "dpi": 160
+          },
+          {
+            "width": 1920,
+            "height": 720,
+            "dpi": 160,
+            "overlays": [
+              {
+                "vm_index": 0,
+                "display_index": 0
+              }
+            ]
           }
         ]
       }

@@ -146,6 +146,7 @@ COPY --chmod=755 build-utils/aaos-utils/checkout_aaos.sh /google/aaos-utils/chec
 COPY --chmod=755 build-utils/aaos-utils/deploy_aaos_26q2_entry_point.sh /google/aaos-utils/deploy_aaos_26q2_entry_point.sh
 COPY --chmod=644 build-utils/aaos-utils/dev_utils.sh /google/aaos-utils/dev_utils.sh
 COPY --chmod=644 build-utils/aaos-utils/ds-multi-cvd-config.json /google/aaos-utils/ds-multi-cvd-config.json
+COPY --chmod=644 build-utils/aaos-utils/cuttlefish_no_webrtc_marker /google/aaos-utils/cuttlefish_no_webrtc_marker
 COPY --chmod=755 build-utils/aaos-utils/patch_applier/patch_aaos.py /google/aaos-utils/patch_applier/patch_aaos.py
 COPY --chmod=644 build-utils/aaos-utils/patch_applier/patches.json /google/aaos-utils/patch_applier/patches.json
 COPY --chmod=644 build-utils/aaos-utils/patch_applier/patches/ /google/aaos-utils/patch_applier/patches/

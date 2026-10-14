@@ -44,6 +44,8 @@ ENV BACKEND_PROXY_PATH="/selkies/"
 ENV DEFAULT_CLIENT_PROTOCOL=HTTP
 ENV SUPPORTED_PROTOCOLS="HTTP,SSH"
 ENV DEFAULT_REDIRECT_PATH="/selkies/"
+# Keep Soong's tracked environment aligned across GUI apps (ASfP / SDV APEX Deploy) and CLI shells
+ENV SOONG_GEN_RUST_PROJECT="1"
 
 # Packages required by CARLA 0.9.15 simulation runtime (Vulkan rendering, OpenMP)
 # and by image verification tests.

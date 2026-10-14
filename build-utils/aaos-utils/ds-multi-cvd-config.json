@@ -33,7 +33,7 @@
       "@import": "auto",
       "name": "vm1",
       "disk": {
-        "default_build": "/home/user/Workspace/aaos-26q2/out/target/product/sdv_ivi_cf"
+        "default_build": "/home/user/Workspace/aaos-26q2/out-ivi/target/product/sdv_ivi_cf"
       },
       "boot": {
         "extra_bootconfig_args": "androidboot.sdv.instance_name=instance2 androidboot.virt.address=4 androidboot.sdv.boot_mode=unlocked"

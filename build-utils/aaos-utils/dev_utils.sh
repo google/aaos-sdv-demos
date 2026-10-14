@@ -16,9 +16,9 @@
 # Helper tools for building AAOS targets and launching CVD instances.
 # Intended to be sourced from interactive bash shells or ~/.bashrc.
 
-ANDROID_BUILD_TOP="${ANDROID_BUILD_TOP:-${HOME}/Workspace/aaos-26q2}"
-SDV_MEDIA_LUNCH_TARGET="${SDV_MEDIA_LUNCH_TARGET:-sdv_media_har_cf-trunk_staging-userdebug}"
-IVI_LUNCH_TARGET="${IVI_LUNCH_TARGET:-sdv_ivi_cf_ds-trunk_staging-userdebug}"
+export ANDROID_BUILD_TOP="${ANDROID_BUILD_TOP:-${HOME}/Workspace/aaos-26q2}"
+export SDV_MEDIA_LUNCH_TARGET="${SDV_MEDIA_LUNCH_TARGET:-sdv_media_har_cf-trunk_staging-userdebug}"
+export IVI_LUNCH_TARGET="${IVI_LUNCH_TARGET:-sdv_ivi_cf_ds-trunk_staging-userdebug}"
 
 if ! declare -f _log > /dev/null 2>&1; then
   _log() {

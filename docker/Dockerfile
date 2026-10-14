@@ -147,6 +147,10 @@ COPY --chmod=644 someip-bridge/external_utils/manual_control.py /google/someip-b
 COPY --chmod=644 build-utils/recipe/base.sh /google/recipe/base.sh
 COPY --chmod=755 build-utils/aaos-utils/checkout_aaos.sh /google/aaos-utils/checkout_aaos.sh
 COPY --chmod=755 build-utils/aaos-utils/deploy_aaos_26q2_entry_point.sh /google/aaos-utils/deploy_aaos_26q2_entry_point.sh
+COPY --chmod=755 build-utils/aaos-utils/build_soong_target.sh /google/aaos-utils/build_soong_target.sh
+COPY --chmod=755 build-utils/aaos-utils/update_apex.sh /google/aaos-utils/update_apex.sh
+RUN ln -sf /google/aaos-utils/build_soong_target.sh /usr/local/bin/build_soong_target
+RUN ln -sf /google/aaos-utils/update_apex.sh /usr/local/bin/update_apex
 COPY --chmod=644 build-utils/aaos-utils/dev_utils.sh /google/aaos-utils/dev_utils.sh
 COPY --chmod=644 build-utils/aaos-utils/ds-multi-cvd-config.json /google/aaos-utils/ds-multi-cvd-config.json
 COPY --chmod=644 build-utils/aaos-utils/cuttlefish_no_webrtc_marker /google/aaos-utils/cuttlefish_no_webrtc_marker

@@ -14,6 +14,13 @@
     "patch_ordering": 1
   },
   {
+    "repo_path": "device/google/sdv",
+    "patch_filename": "patches/device_google_sdv_vhal_proxy_apex.patch",
+    "description": "Add com.android.sdv.sample.vhal_proxy APEX to IVI sample packages",
+    "tag": "hackathon-task",
+    "patch_ordering": 2
+  },
+  {
     "repo_path": "packages/services/display_safety",
     "patch_filename": "patches/packages_services_display_safety.patch",
     "description": "Base DS patch. Add carla signal, add start someip by default, disable DS demo sequence",
@@ -54,6 +61,13 @@
     "description": "Add AirbagTester service bundle and hackathon debugging tasks in CarController and VHAL proxy",
     "tag": "hackathon-task",
     "patch_ordering": 2
+  },
+  {
+    "repo_path": "system/software_defined_vehicle/samples",
+    "patch_filename": "patches/vhal_proxy_apex_config.patch",
+    "description": "Package VhalProxySampleConfig.json in updatable com.android.sdv.sample.vhal_proxy APEX",
+    "tag": "hackathon-task",
+    "patch_ordering": 3
   },
   {
     "repo_path": "packages/services/Car",

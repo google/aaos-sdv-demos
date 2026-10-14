@@ -32,24 +32,45 @@ _log() {
 _log "Starting AAOS 26Q2 deployment pipeline..."
 
 # Determine output directory (default: ~/Workspace/aaos-26q2 or from -o/--output-dir flag)
+# and check for --skip-repo-sync / --no-checkout
 OUTPUT_DIR="${HOME}/Workspace/aaos-26q2"
-for ((i = 1; i <= $#; i++)); do
-  arg="${!i}"
-  if [[ "$arg" == "-o" || "$arg" == "--output-dir" ]]; then
-    next_idx=$((i + 1))
-    OUTPUT_DIR="${!next_idx}"
-  fi
+SKIP_REPO_SYNC=false
+CHECKOUT_ARGS=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --skip-repo-sync | --no-checkout)
+      SKIP_REPO_SYNC=true
+      shift
+      ;;
+    -o | --output-dir)
+      OUTPUT_DIR="$2"
+      CHECKOUT_ARGS+=("$1" "$2")
+      shift 2
+      ;;
+    *)
+      CHECKOUT_ARGS+=("$1")
+      shift
+      ;;
+  esac
 done
 
 # 1. Execute Checkout & Sync Script
-_log "Step 1/4: Running checkout_aaos.sh..."
-"${SCRIPT_DIR}/checkout_aaos.sh" "$@"
+if [[ "${SKIP_REPO_SYNC}" == "true" ]]; then
+  _log "Step 1/4: Skipping checkout_aaos.sh (--skip-repo-sync specified)."
+  if [[ ! -d "${OUTPUT_DIR}" ]]; then
+    _log "ERROR: Output directory '${OUTPUT_DIR}' does not exist; cannot skip repo sync."
+    exit 1
+  fi
+else
+  _log "Step 1/4: Running checkout_aaos.sh..."
+  "${SCRIPT_DIR}/checkout_aaos.sh" "${CHECKOUT_ARGS[@]}"
+fi
 
 # 2. Apply Repository Patches using patch_applier/patch_aaos.py
-_log "Step 2/4: Applying repository patches using patch_aaos.py..."
+_log "Step 2/4: Applying repository patches using patch_aaos.py (filter='${DEMO_BUILD_AAOS_PATCHES-base}')..."
 "${SCRIPT_DIR}/patch_applier/patch_aaos.py" \
   --aaos-dir "${OUTPUT_DIR}" \
-  --patch-tag-filter="${DEMO_BUILD_AAOS_PATCHES:-base}"
+  --patch-tag-filter="${DEMO_BUILD_AAOS_PATCHES-base}"
 
 # 3. Source Development Utility Functions (dev_utils.sh)
 _log "Step 3/4: Sourcing dev_utils.sh..."

@@ -394,10 +394,10 @@ index 0000000..d29cc59
 +}
 diff --git a/car_controller/services/AirbagTester/src/main.rs b/car_controller/services/AirbagTester/src/main.rs
 new file mode 100644
-index 0000000..feecae8
+index 0000000..c5a4c6a
 --- /dev/null
 +++ b/car_controller/services/AirbagTester/src/main.rs
-@@ -0,0 +1,104 @@
+@@ -0,0 +1,106 @@
 +// Copyright (C) 2026 The Android Open Source Project
 +//
 +// Licensed under the Apache License, Version 2.0 (the "License");
@@ -488,22 +488,24 @@ index 0000000..feecae8
 +    info!("Airbag publisher created successfully in AirbagTester");
 +
 +    let mut telltale_alert = false;
-+    // loop {
-+    //     sleep(Duration::from_secs(5)).await;
-+    //     telltale_alert = !telltale_alert;
++    /*
++    loop {
++        sleep(Duration::from_secs(5)).await;
++        telltale_alert = !telltale_alert;
 +
-+    //     let mut status = TellTaleStatus::new();
-+    //     status.alert = telltale_alert;
++        let mut status = TellTaleStatus::new();
++        status.alert = telltale_alert;
 +
-+    //     info!("AirbagTester publishing TellTaleStatus for airbag: alert={telltale_alert}");
-+    //     if let Err(e) = publisher.publish(&status) {
-+    //         warn!("Failed to publish airbag TellTaleStatus: {e:?}");
-+    //     }
-+    // }
++        info!("AirbagTester publishing TellTaleStatus for airbag: alert={telltale_alert}");
++        if let Err(e) = publisher.publish(&status) {
++            warn!("Failed to publish airbag TellTaleStatus: {e:?}");
++        }
++    }
++    */
 +    Ok(())
 +}
 diff --git a/car_controller/services/CarController/src/main.rs b/car_controller/services/CarController/src/main.rs
-index 6f60178..399173c 100644
+index 6f60178..9fd6879 100644
 --- a/car_controller/services/CarController/src/main.rs
 +++ b/car_controller/services/CarController/src/main.rs
 @@ -198,6 +198,7 @@ async fn monitor_ambient_state(
@@ -514,32 +516,20 @@ index 6f60178..399173c 100644
  async fn control_headlights(
      comms: Arc<SdvComms>,
      ambient_state: watch::Receiver<AmbientState>,
-@@ -213,17 +214,17 @@ async fn control_headlights(
+@@ -212,7 +213,7 @@ async fn control_headlights(
+         .await?;
  
      let mut updates = WatchStream::new(ambient_state);
- 
--    while let Some(state) = updates.next().await {
--        let command = LightCommand {
--            park_lights_on: state.is_night || state.is_fog,
--            fog_lights_on: state.is_fog,
--            lowbeam_on: state.is_night,
--            highbeam_on: state.is_night && state.is_fog,
--            ..Default::default()
--        };
--        info!("Publishing LightCommand: {command:?}");
--        headlight_command_publisher.publish(&command)?;
--    }
-+    // while let Some(state) = updates.next().await {
-+    //     let command = LightCommand {
-+    //         park_lights_on: state.is_night || state.is_fog,
-+    //         fog_lights_on: state.is_fog,
-+    //         lowbeam_on: state.is_night,
-+    //         highbeam_on: state.is_night && state.is_fog,
-+    //         ..Default::default()
-+    //     };
-+    //     info!("Publishing LightCommand: {command:?}");
-+    //     headlight_command_publisher.publish(&command)?;
-+    // }
+-
++    /*
+     while let Some(state) = updates.next().await {
+         let command = LightCommand {
+             park_lights_on: state.is_night || state.is_fog,
+@@ -224,6 +225,7 @@ async fn control_headlights(
+         info!("Publishing LightCommand: {command:?}");
+         headlight_command_publisher.publish(&command)?;
+     }
++    */
      Ok(())
  }
  

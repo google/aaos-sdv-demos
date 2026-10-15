@@ -81,7 +81,7 @@ asfp() {
 }
 
 # Alias for visualizing Cuttlefish IVI/Cluster instance (vm1 / cvd_1-vm1-2) in Chrome with Vulkan/ANGLE
-alias visualize_cvd='google-chrome --allow-insecure-localhost --use-gl=angle --use-angle=vulkan --ignore-gpu-blocklist --user-data-dir=/tmp/dev-chrome-profile --app="https://localhost:8444/devices/cvd_1-vm1-2/files/client.html" > /dev/null 2>&1 < /dev/null & disown'
+alias visualize_cvd='google-chrome --allow-insecure-localhost --use-gl=angle --use-angle=vulkan --ignore-gpu-blocklist --user-data-dir=/tmp/dev-chrome-profile --app="https://localhost:8443/devices/cvd_1-vm1-2/files/client.html" > /dev/null 2>&1 < /dev/null & disown'
 
 # Source cvd-wrapping utils
 if [ -f /google/aaos-utils/dev_utils.sh ]; then

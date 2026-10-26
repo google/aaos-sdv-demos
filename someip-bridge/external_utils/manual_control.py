@@ -227,35 +227,15 @@ def get_actor_blueprints(world, filter, generation):
 # -- Default Spawn Point -------------------------------------------------------
 # ==============================================================================
 
-DEFAULT_SPAWN_POINT = carla.Transform(
-    carla.Location(x=356.560211, y=-288.463104, z=156.336990),
-    carla.Rotation(pitch=1.829985, yaw=-139.894669, roll=0.000000)
-)
+DEFAULT_SPAWN_POINT_INDEX = 3
 
 
 def get_initial_spawn_point(carla_map):
-    """Returns the default deterministic spawn point if available in the current map;
-    otherwise falls back to a campus-filtered or random spawn point."""
+    """Returns the spawn point from the map at DEFAULT_SPAWN_POINT_INDEX."""
     all_spawns = carla_map.get_spawn_points()
     if not all_spawns:
         return carla.Transform()
-
-    # 1. Deterministic match: look for default spawn point
-    for sp in all_spawns:
-        if sp.location.distance(DEFAULT_SPAWN_POINT.location) < 2.0:
-            return sp
-
-    # 2. Fallback: filter within campus bounds
-    CAMPUS_BOUNDS = {'min_x': -560.0, 'max_x': 680.0, 'min_y': -550.0, 'max_y': 650.0}
-    campus_spawns = [
-        sp for sp in all_spawns
-        if CAMPUS_BOUNDS['min_x'] <= sp.location.x <= CAMPUS_BOUNDS['max_x']
-        and CAMPUS_BOUNDS['min_y'] <= sp.location.y <= CAMPUS_BOUNDS['max_y']
-    ]
-    if campus_spawns:
-        return random.choice(campus_spawns)
-
-    return random.choice(all_spawns)
+    return all_spawns[DEFAULT_SPAWN_POINT_INDEX % len(all_spawns)]
 
 
 # ==============================================================================

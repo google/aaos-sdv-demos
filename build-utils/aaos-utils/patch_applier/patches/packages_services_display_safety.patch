@@ -13,7 +13,7 @@
 # limitations under the License.
 
 diff --git a/service/ds-toolkit/res/ds-multi-cvd-config-template.json b/service/ds-toolkit/res/ds-multi-cvd-config-template.json
-index 1d6901c..795460c 100644
+index 1d6901c..ff48989 100644
 --- a/service/ds-toolkit/res/ds-multi-cvd-config-template.json
 +++ b/service/ds-toolkit/res/ds-multi-cvd-config-template.json
 @@ -9,7 +9,7 @@
@@ -25,6 +25,15 @@ index 1d6901c..795460c 100644
        },
        "vm": {
          "cpus": 4,
+@@ -47,7 +47,7 @@
+         "guest_enforce_security": "false"
+       },
+       "graphics": {
+-      	"gpu_mode": "guest_swiftshader",
++      	"gpu_mode": "gfxstream_guest_angle",
+         "displays": [
+           {
+             "width": 1920,
 diff --git a/service/product/har_sdv_service_bundle_apex/FakeVehicleDataServiceBundleOrchestration.textproto b/service/product/har_sdv_service_bundle_apex/FakeVehicleDataServiceBundleOrchestration.textproto
 index 5b54621..e6cbb4d 100644
 --- a/service/product/har_sdv_service_bundle_apex/FakeVehicleDataServiceBundleOrchestration.textproto

@@ -254,7 +254,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--patch-tag-filter",
         required=True,
-        help="Pipe-separated list of patch tags to apply (e.g. 'TAG1|TAG2').",
+        help="Pipe-separated list of patch tags to apply (e.g. 'TAG1|TAG2', or '' for none).",
     )
     return parser.parse_args()
 
@@ -382,10 +382,9 @@ def main() -> int:
     args = parse_args()
     aaos_dir_str = args.aaos_dir_flag or args.aaos_dir_pos
     allowed_tags = parse_tag_filter(args.patch_tag_filter)
-    if not aaos_dir_str or not allowed_tags:
+    if not aaos_dir_str:
         log_error(
-            "Both --aaos-dir and at least one non-empty tag in "
-            "--patch-tag-filter must be specified."
+            "--aaos-dir must be specified."
         )
         return 1
 

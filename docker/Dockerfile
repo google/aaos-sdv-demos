@@ -44,6 +44,8 @@ ENV BACKEND_PROXY_PATH="/selkies/"
 ENV DEFAULT_CLIENT_PROTOCOL=HTTP
 ENV SUPPORTED_PROTOCOLS="HTTP,SSH"
 ENV DEFAULT_REDIRECT_PATH="/selkies/"
+# Keep Soong's tracked environment aligned across GUI apps (ASfP / SDV APEX Deploy) and CLI shells
+ENV SOONG_GEN_RUST_PROJECT="1"
 
 # Packages required by CARLA 0.9.15 simulation runtime (Vulkan rendering, OpenMP)
 # and by image verification tests.
@@ -135,6 +137,7 @@ RUN python3.7 -m pip install --no-cache-dir --ignore-requires-python --require-h
 COPY --chmod=755 build-utils/carla915-utils/ /google/carla915-utils/
 
 # 4. SOME/IP Bridge & Client Utilities
+COPY --chmod=644 someip-bridge/camera_streamer.py /google/someip-bridge/camera_streamer.py
 COPY --chmod=644 someip-bridge/carla_someip_client.py /google/someip-bridge/carla_someip_client.py
 COPY --chmod=644 someip-bridge/get_data_logic.py /google/someip-bridge/get_data_logic.py
 COPY --chmod=755 someip-bridge/run_carla_and_bridge.sh /google/someip-bridge/run_carla_and_bridge.sh
@@ -144,8 +147,13 @@ COPY --chmod=644 someip-bridge/external_utils/manual_control.py /google/someip-b
 COPY --chmod=644 build-utils/recipe/base.sh /google/recipe/base.sh
 COPY --chmod=755 build-utils/aaos-utils/checkout_aaos.sh /google/aaos-utils/checkout_aaos.sh
 COPY --chmod=755 build-utils/aaos-utils/deploy_aaos_26q2_entry_point.sh /google/aaos-utils/deploy_aaos_26q2_entry_point.sh
+COPY --chmod=755 build-utils/aaos-utils/build_soong_target.sh /google/aaos-utils/build_soong_target.sh
+COPY --chmod=755 build-utils/aaos-utils/update_apex.sh /google/aaos-utils/update_apex.sh
+RUN ln -sf /google/aaos-utils/build_soong_target.sh /usr/local/bin/build_soong_target
+RUN ln -sf /google/aaos-utils/update_apex.sh /usr/local/bin/update_apex
 COPY --chmod=644 build-utils/aaos-utils/dev_utils.sh /google/aaos-utils/dev_utils.sh
 COPY --chmod=644 build-utils/aaos-utils/ds-multi-cvd-config.json /google/aaos-utils/ds-multi-cvd-config.json
+COPY --chmod=644 build-utils/aaos-utils/cuttlefish_no_webrtc_marker /google/aaos-utils/cuttlefish_no_webrtc_marker
 COPY --chmod=755 build-utils/aaos-utils/patch_applier/patch_aaos.py /google/aaos-utils/patch_applier/patch_aaos.py
 COPY --chmod=644 build-utils/aaos-utils/patch_applier/patches.json /google/aaos-utils/patch_applier/patches.json
 COPY --chmod=644 build-utils/aaos-utils/patch_applier/patches/ /google/aaos-utils/patch_applier/patches/

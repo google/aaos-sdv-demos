@@ -17,8 +17,9 @@
 # shellcheck disable=SC1091
 source /google/recipe/base.sh
 
-# Enable Application Default Credentials (ADC) auth for Antigravity CLI (agy)
-export AGY_ADC_AUTH="${AGY_ADC_AUTH:-true}"
+# Load container-level Antigravity / GCP env vars if configured via Workstation container.env
+# shellcheck disable=SC1091
+[ -f /etc/profile.d/agy-env.sh ] && source /etc/profile.d/agy-env.sh
 
 # CARLA Environment
 if [ -z "${CARLA_DIR:-}" ]; then
@@ -79,8 +80,8 @@ asfp() {
     /opt/android-studio-for-platform-canary/bin/studio "$@" > /dev/null 2>&1 < /dev/null & disown
 }
 
-# Alias for visualizing Cuttlefish instances in Chrome
-alias visualize_cvd='google-chrome --allow-insecure-localhost --user-data-dir=/tmp/dev-chrome-profile https://localhost:8444 > /dev/null 2>&1 < /dev/null & disown'
+# Alias for visualizing Cuttlefish IVI/Cluster instance (vm1 / cvd_1-vm1-2) in Chrome with Vulkan/ANGLE
+alias visualize_cvd='google-chrome --allow-insecure-localhost --use-gl=angle --use-angle=vulkan --ignore-gpu-blocklist --user-data-dir=/tmp/dev-chrome-profile --app="https://localhost:8443/devices/cvd_1-vm1-2/files/client.html" > /dev/null 2>&1 < /dev/null & disown'
 
 # Source cvd-wrapping utils
 if [ -f /google/aaos-utils/dev_utils.sh ]; then

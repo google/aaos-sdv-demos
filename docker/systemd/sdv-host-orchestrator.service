@@ -29,6 +29,7 @@ WorkingDirectory=/home/user
 Environment=HOME=/home/user
 Environment=USER=user
 Environment="PATH=/home/user/Android/Sdk/platform-tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="LOCAL_DEBIAN_SUBSTITUTION_MARKER_FILE=/google/aaos-utils/cuttlefish_no_webrtc_marker"
 ExecStart=/usr/lib/cuttlefish-common/bin/host_orchestrator
 Restart=on-failure
 RestartSec=2

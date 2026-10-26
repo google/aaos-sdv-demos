@@ -35,6 +35,5 @@ Environment=DISPLAY=:0
 Environment=LANG=en_US.UTF-8
 Environment=XDG_RUNTIME_DIR=/run/user/1000
 Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
-Environment=AGY_ADC_AUTH=true
 ExecStart=/usr/local/bin/antigravity-ide
 Restart=no

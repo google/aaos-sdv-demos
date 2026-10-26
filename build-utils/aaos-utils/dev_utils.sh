@@ -16,9 +16,16 @@
 # Helper tools for building AAOS targets and launching CVD instances.
 # Intended to be sourced from interactive bash shells or ~/.bashrc.
 
-ANDROID_BUILD_TOP="${ANDROID_BUILD_TOP:-${HOME}/Workspace/aaos-26q2}"
-SDV_MEDIA_LUNCH_TARGET="${SDV_MEDIA_LUNCH_TARGET:-sdv_media_har_cf-trunk_staging-userdebug}"
-IVI_LUNCH_TARGET="${IVI_LUNCH_TARGET:-sdv_ivi_cf_ds-trunk_staging-userdebug}"
+export ANDROID_BUILD_TOP="${ANDROID_BUILD_TOP:-${HOME}/Workspace/aaos-26q2}"
+export SDV_MEDIA_LUNCH_TARGET="${SDV_MEDIA_LUNCH_TARGET:-sdv_media_har_cf-trunk_staging-userdebug}"
+export IVI_LUNCH_TARGET="${IVI_LUNCH_TARGET:-sdv_ivi_cf_ds-trunk_staging-userdebug}"
+export IVI_OUT_DIR_NAME="${IVI_OUT_DIR_NAME:-out-ivi}"
+export IVI_OUT_DIR="${IVI_OUT_DIR:-${ANDROID_BUILD_TOP}/${IVI_OUT_DIR_NAME}}"
+
+# Generate out/soong/rust-project.json during initial builds and keep Soong's
+# tracked environment aligned with ASfP (which sets SOONG_GEN_RUST_PROJECT=1
+# whenever "rust" is in .asfp-project other_languages).
+export SOONG_GEN_RUST_PROJECT="${SOONG_GEN_RUST_PROJECT:-1}"
 
 if ! declare -f _log > /dev/null 2>&1; then
   _log() {
@@ -38,6 +45,31 @@ _ensure_envsetup() {
   fi
 }
 
+_is_ivi_target() {
+  local target="$1"
+  [[ "$target" == "$IVI_LUNCH_TARGET" || "$target" == sdv_ivi* ]]
+}
+
+lunch_media() {
+  local orig_dir
+  orig_dir="$(pwd)"
+  cd "$ANDROID_BUILD_TOP" || return 1
+  _ensure_envsetup || return 1
+  unset OUT_DIR
+  lunch "$SDV_MEDIA_LUNCH_TARGET"
+  cd "$orig_dir" || return 1
+}
+
+lunch_ivi() {
+  local orig_dir
+  orig_dir="$(pwd)"
+  cd "$ANDROID_BUILD_TOP" || return 1
+  _ensure_envsetup || return 1
+  export OUT_DIR="$IVI_OUT_DIR_NAME"
+  lunch "$IVI_LUNCH_TARGET"
+  cd "$orig_dir" || return 1
+}
+
 build_target() {
   local build_target="$1"
   local artifact="${2:-}"
@@ -47,6 +79,14 @@ build_target() {
 
   _ensure_envsetup
 
+  if _is_ivi_target "$build_target"; then
+    export OUT_DIR="$IVI_OUT_DIR_NAME"
+    _log "Using separate IVI output directory: OUT_DIR=${OUT_DIR} (${IVI_OUT_DIR})"
+  else
+    unset OUT_DIR
+    _log "Using default output directory: ${ANDROID_BUILD_TOP}/out"
+  fi
+
   _log "Executing lunch for target: ${build_target}..."
   lunch "${build_target}"
 
@@ -54,7 +94,7 @@ build_target() {
   if [[ -n "$artifact" ]]; then
     build_cmd+=("$artifact")
   fi
-  _log "Starting build compilation for artifact: ${artifact:-<default>} (lunch: ${build_target})."
+  _log "Starting build compilation for artifact: ${artifact:-<default>} (lunch: ${build_target}, OUT_DIR: ${OUT_DIR:-${ANDROID_BUILD_TOP}/out})."
 
   # Retry loop for compilation failures
   local max_retries="${BUILD_MAX_RETRIES:-2}"
@@ -86,6 +126,14 @@ build_target() {
   cd "$orig_dir" || return 1
 }
 
+build_media() {
+  build_target "$SDV_MEDIA_LUNCH_TARGET" "${1:-}"
+}
+
+build_ivi() {
+  build_target "$IVI_LUNCH_TARGET" "${1:-}"
+}
+
 AAOS_UTILS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CVD_MULTI_CONFIG="${CVD_MULTI_CONFIG:-${AAOS_UTILS_DIR}/ds-multi-cvd-config.json}"
 
@@ -103,14 +151,16 @@ launch_2vm() {
 
   local media_dir="${ANDROID_BUILD_TOP}/out/target/product/sdv_har_cf"
   [ ! -d "$media_dir" ] && media_dir="${ANDROID_BUILD_TOP}/out/target/product/sdv_media_har_cf"
-  local ivi_dir="${ANDROID_BUILD_TOP}/out/target/product/sdv_ivi_cf_ds"
+  local ivi_dir="${IVI_OUT_DIR}/target/product/sdv_ivi_cf_ds"
+  [ ! -d "$ivi_dir" ] && ivi_dir="${IVI_OUT_DIR}/target/product/sdv_ivi_cf"
+  [ ! -d "$ivi_dir" ] && ivi_dir="${ANDROID_BUILD_TOP}/out/target/product/sdv_ivi_cf_ds"
   [ ! -d "$ivi_dir" ] && ivi_dir="${ANDROID_BUILD_TOP}/out/target/product/sdv_ivi_cf"
 
   if [ ! -d "$media_dir" ] || [ ! -d "$ivi_dir" ]; then
     _log "Error: Missing required build outputs for dual-CVD launch:"
     [ ! -d "$media_dir" ] && _log "  - Media/Cluster build not found (checked ${ANDROID_BUILD_TOP}/out/target/product/sdv_har_cf and sdv_media_har_cf)"
-    [ ! -d "$ivi_dir" ] && _log "  - IVI build not found (checked ${ANDROID_BUILD_TOP}/out/target/product/sdv_ivi_cf_ds and sdv_ivi_cf)"
-    _log "Please run 'build' first (or build missing targets) before launching CVDs."
+    [ ! -d "$ivi_dir" ] && _log "  - IVI build not found (checked ${IVI_OUT_DIR}/target/product/sdv_ivi_cf and sdv_ivi_cf_ds)"
+    _log "Please run 'build' first (or 'build_media' / 'build_ivi') before launching CVDs."
     cd "$orig_dir" || return 1
     return 1
   fi
@@ -120,6 +170,7 @@ launch_2vm() {
   fi
 
   _ensure_envsetup || return 1
+  unset OUT_DIR
   lunch "$SDV_MEDIA_LUNCH_TARGET" # any of the 2 targets would work
   cvd load "$CVD_MULTI_CONFIG"
   local launch_status=$?
@@ -132,6 +183,7 @@ clear_2vm() {
   orig_dir="$(pwd)"
   cd "$ANDROID_BUILD_TOP" || return 1
   _ensure_envsetup || return 1
+  unset OUT_DIR
   lunch "$SDV_MEDIA_LUNCH_TARGET" # any of the 2 targets would work
   cvd clear
   local clear_status=$?

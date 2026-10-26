@@ -27,7 +27,9 @@
 export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=${XDG_RUNTIME_DIR}/bus}"
 export DISPLAY="${DISPLAY:-:0}"
-export AGY_ADC_AUTH="${AGY_ADC_AUTH:-true}"
+
+# shellcheck disable=SC1091
+[[ -f /etc/profile.d/agy-env.sh ]] && source /etc/profile.d/agy-env.sh
 
 setsid /opt/Antigravity-x64/antigravity \
   --no-sandbox \

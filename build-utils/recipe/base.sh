@@ -20,6 +20,7 @@
 export DEMO_BUILD_BRANCH="android-latest-release"
 export DEMO_BUILD_WITH_GAS="false" # WIP
 export DEMO_BUILD_CARLA_VERSION="0.9.15"
-export DEMO_BUILD_AAOS_PATCHES="base|sdv-nexus|ivi-no-gas-extra"
+export DEMO_BUILD_AAOS_PATCHES="base|sdv-nexus|ivi-no-gas-extra|dark-light-mode"
 export DEMO_BUILD_CARLA_MAP="Town15"
 export DEMO_BUILD_PREINSTALL_CARLA="true"
+export LOCAL_DEBIAN_SUBSTITUTION_MARKER_FILE="/google/aaos-utils/cuttlefish_no_webrtc_marker"

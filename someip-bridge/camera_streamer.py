@@ -12,16 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""CARLA rear-view camera to Cuttlefish virtio-media FIFO streaming logic."""
+"""CARLA camera to Cuttlefish virtio-media FIFO streaming logic."""
 
 # pylint: disable=import-error, broad-exception-caught, invalid-name, too-many-instance-attributes
 
+import argparse
 import fcntl
 import os
 import queue
 import select
+import signal
 import stat
 import threading
+import time
 from typing import Optional
 
 import carla
@@ -34,9 +37,15 @@ CAMERA_HEIGHT = 480
 CAMERA_FPS = 30
 CAMERA_FOV = 110.0
 
+DEFAULT_FRONT_CAMERA_FIFO_PATH = "/tmp/v4l2_front_fifo"
+FRONT_CAMERA_WIDTH = 1920
+FRONT_CAMERA_HEIGHT = 1080
+FRONT_CAMERA_FPS = 5
+FRONT_CAMERA_FOV = 90.0
+
 # Linux fcntl command to set pipe capacity (F_SETPIPE_SZ = 1031)
 F_SETPIPE_SZ = 1031
-PIPE_BUFFER_SIZE_BYTES = 1048576  # 1 MiB (fits >2 full 460,800-byte frames)
+PIPE_BUFFER_SIZE_BYTES = 1048576  # 1 MiB (matches default unprivileged pipe max)
 
 # Automatic gear enum value for Reverse (matches get_automatic_gear_data)
 REVERSE_GEAR_MODE = 1
@@ -46,8 +55,18 @@ def bgra_to_ym12(bgra_array: np.ndarray) -> bytes:
     """Converts a (H, W, 4) uint8 BGRA array into 3-plane YM12 (YUV420M) bytes.
 
     Uses standard BT.601 limited-range integer conversion matching Cuttlefish's
-    vhu_media_v4l2_stream_proxy and the Display Safety guest consumer.
+    vhu_media_v4l2_stream_proxy and guest virtio-media V4L2 consumers.
     """
+    if bgra_array.ndim != 3 or bgra_array.shape[2] != 4:
+        raise ValueError(
+            f"Expected (H, W, 4) BGRA array, got shape {bgra_array.shape}"
+        )
+    height, width, _ = bgra_array.shape
+    if height <= 0 or width <= 0 or (height % 2) != 0 or (width % 2) != 0:
+        raise ValueError(
+            f"YM12 requires positive even dimensions, got {width}x{height}"
+        )
+
     b = bgra_array[:, :, 0].astype(np.int32)
     g = bgra_array[:, :, 1].astype(np.int32)
     r = bgra_array[:, :, 2].astype(np.int32)
@@ -70,15 +89,31 @@ def bgra_to_ym12(bgra_array: np.ndarray) -> bytes:
     return y.tobytes() + u.tobytes() + v.tobytes()
 
 
-class RearCameraStreamer:
-    """Streams a rear-facing CARLA RGB camera into a host V4L2 named pipe (FIFO).
+class _BaseCameraFifoStreamer:
+    """Base streamer pushing CARLA RGB camera frames as YM12 into a host FIFO."""
 
-    The CARLA camera sensor is actively listening and rendering only when the
-    tracked vehicle is in Reverse gear (gear_mode == 1).
-    """
-
-    def __init__(self, fifo_path: str = DEFAULT_CAMERA_FIFO_PATH):
+    def __init__(
+        self,
+        fifo_path: str,
+        width: int,
+        height: int,
+        fps: int,
+        fov: float,
+        thread_name: str,
+        log_tag: str,
+    ):
+        if width <= 0 or height <= 0 or (width % 2) != 0 or (height % 2) != 0:
+            raise ValueError(
+                f"Camera dimensions must be positive even integers, got {width}x{height}"
+            )
+        if fps <= 0:
+            raise ValueError(f"Camera FPS must be positive, got {fps}")
         self.fifo_path = fifo_path
+        self.width = width
+        self.height = height
+        self.fps = fps
+        self.fov = fov
+        self._log_tag = log_tag
         self.sensor = None
         self.is_streaming = False
         self.frames_written = 0
@@ -88,7 +123,7 @@ class RearCameraStreamer:
         self._stop_event = threading.Event()
         self._ensure_fifo()
         self._writer_thread = threading.Thread(
-            target=self._writer_loop, name="RearCameraFifoWriter", daemon=True
+            target=self._writer_loop, name=thread_name, daemon=True
         )
         self._writer_thread.start()
 
@@ -100,30 +135,25 @@ class RearCameraStreamer:
             mode = os.stat(self.fifo_path).st_mode
             if not stat.S_ISFIFO(mode):
                 print(
-                    f"\n[Camera] Warning: {self.fifo_path} exists and is not a"
-                    " FIFO. Recreating as FIFO..."
+                    f"\n[{self._log_tag}] Warning: {self.fifo_path} exists and"
+                    " is not a FIFO. Recreating as FIFO..."
                 )
                 if stat.S_ISREG(mode):
                     os.unlink(self.fifo_path)
                     os.mkfifo(self.fifo_path, 0o666)
         else:
             os.mkfifo(self.fifo_path, 0o666)
-            print(f"\n[Camera] Created named pipe (FIFO) at {self.fifo_path}")
+            print(
+                f"\n[{self._log_tag}] Created named pipe (FIFO) at"
+                f" {self.fifo_path}"
+            )
 
-    def attach_to_vehicle(self, world, vehicle):
-        """Spawns and attaches the rear-view camera sensor to the ego vehicle."""
-        self.destroy_sensor()
-        bound_x = 0.5 + vehicle.bounding_box.extent.x
-        bound_z = 0.5 + vehicle.bounding_box.extent.z
-        transform = carla.Transform(
-            carla.Location(x=-bound_x, y=0.0, z=0.8 * bound_z),
-            carla.Rotation(pitch=-10.0, yaw=180.0, roll=0.0),
-        )
+    def _spawn_camera_sensor(self, world, vehicle, transform: "carla.Transform"):
         bp = world.get_blueprint_library().find("sensor.camera.rgb")
-        bp.set_attribute("image_size_x", str(CAMERA_WIDTH))
-        bp.set_attribute("image_size_y", str(CAMERA_HEIGHT))
-        bp.set_attribute("fov", str(CAMERA_FOV))
-        bp.set_attribute("sensor_tick", str(1.0 / CAMERA_FPS))
+        bp.set_attribute("image_size_x", str(self.width))
+        bp.set_attribute("image_size_y", str(self.height))
+        bp.set_attribute("fov", str(self.fov))
+        bp.set_attribute("sensor_tick", str(1.0 / self.fps))
 
         self.sensor = world.spawn_actor(
             bp,
@@ -131,30 +161,6 @@ class RearCameraStreamer:
             attach_to=vehicle,
             attachment_type=carla.AttachmentType.Rigid,
         )
-        self.is_streaming = False
-        print(
-            f"\n[Camera] Attached rear-view camera sensor (ID: {self.sensor.id},"
-            f" {CAMERA_WIDTH}x{CAMERA_HEIGHT}@{CAMERA_FPS}fps) to vehicle"
-            f" {vehicle.id} (FIFO: {self.fifo_path})"
-        )
-
-    def update_gear_state(self, gear_mode: int):
-        """Starts or stops the CARLA camera sensor based on reverse gear state."""
-        if self.sensor is None:
-            return
-        should_stream = gear_mode == REVERSE_GEAR_MODE
-        if should_stream and not self.is_streaming:
-            self.sensor.listen(self._on_carla_image)
-            self.is_streaming = True
-            print(
-                f"\n[Camera] Reverse gear engaged: started rear camera stream to"
-                f" {self.fifo_path}"
-            )
-        elif not should_stream and self.is_streaming:
-            self.sensor.stop()
-            self.is_streaming = False
-            self._clear_frame_queue()
-            print("\n[Camera] Left reverse gear: paused rear camera stream")
 
     def _clear_frame_queue(self):
         try:
@@ -190,7 +196,9 @@ class RearCameraStreamer:
                     except OSError:
                         pass
                     print(
-                        f"\n[Camera] Connected to FIFO reader on {self.fifo_path}"
+                        f"\n[{self._log_tag}] Connected to FIFO reader on"
+                        f" {self.fifo_path}",
+                        flush=True,
                     )
                 except OSError:
                     # E.g. errno.ENXIO when no reader has opened the FIFO yet
@@ -261,3 +269,193 @@ class RearCameraStreamer:
             pass
         if self._writer_thread.is_alive():
             self._writer_thread.join(timeout=2.0)
+
+
+class RearCameraStreamer(_BaseCameraFifoStreamer):
+    """Streams a rear-facing CARLA RGB camera into a host V4L2 named pipe (FIFO).
+
+    The CARLA camera sensor is actively listening and rendering only when the
+    tracked vehicle is in Reverse gear (gear_mode == 1).
+    """
+
+    def __init__(self, fifo_path: str = DEFAULT_CAMERA_FIFO_PATH):
+        super().__init__(
+            fifo_path=fifo_path,
+            width=CAMERA_WIDTH,
+            height=CAMERA_HEIGHT,
+            fps=CAMERA_FPS,
+            fov=CAMERA_FOV,
+            thread_name="RearCameraFifoWriter",
+            log_tag="Camera",
+        )
+
+    def attach_to_vehicle(self, world, vehicle):
+        """Spawns and attaches the rear-view camera sensor to the ego vehicle."""
+        self.destroy_sensor()
+        bound_x = 0.5 + vehicle.bounding_box.extent.x
+        bound_z = 0.5 + vehicle.bounding_box.extent.z
+        transform = carla.Transform(
+            carla.Location(x=-bound_x, y=0.0, z=0.8 * bound_z),
+            carla.Rotation(pitch=-10.0, yaw=180.0, roll=0.0),
+        )
+        self._spawn_camera_sensor(world, vehicle, transform)
+        self.is_streaming = False
+        print(
+            f"\n[Camera] Attached rear-view camera sensor (ID: {self.sensor.id},"
+            f" {self.width}x{self.height}@{self.fps}fps) to vehicle"
+            f" {vehicle.id} (FIFO: {self.fifo_path})"
+        )
+
+    def update_gear_state(self, gear_mode: int):
+        """Starts or stops the CARLA camera sensor based on reverse gear state."""
+        if self.sensor is None:
+            return
+        should_stream = gear_mode == REVERSE_GEAR_MODE
+        if should_stream and not self.is_streaming:
+            self.sensor.listen(self._on_carla_image)
+            self.is_streaming = True
+            print(
+                "\n[Camera] Reverse gear engaged: started rear camera stream to"
+                f" {self.fifo_path}"
+            )
+        elif not should_stream and self.is_streaming:
+            self.sensor.stop()
+            self.is_streaming = False
+            self._clear_frame_queue()
+            print("\n[Camera] Left reverse gear: paused rear camera stream")
+
+
+class FrontCameraStreamer(_BaseCameraFifoStreamer):
+    """Streams a front-facing CARLA RGB camera continuously into a host FIFO.
+
+    Unlike RearCameraStreamer (which activates only in Reverse gear), the front
+    camera streams continuously while attached to the ego vehicle so Android
+    Automotive consumers such as the Context Buffer / Visual Intelligence
+    service receive live frames across all drive states without interfering
+    with the rear-view camera stream.
+    """
+
+    def __init__(
+        self,
+        fifo_path: str = DEFAULT_FRONT_CAMERA_FIFO_PATH,
+        width: int = FRONT_CAMERA_WIDTH,
+        height: int = FRONT_CAMERA_HEIGHT,
+        fps: int = FRONT_CAMERA_FPS,
+        fov: float = FRONT_CAMERA_FOV,
+    ):
+        super().__init__(
+            fifo_path=fifo_path,
+            width=width,
+            height=height,
+            fps=fps,
+            fov=fov,
+            thread_name="FrontCameraFifoWriter",
+            log_tag="FrontCamera",
+        )
+
+    def attach_to_vehicle(self, world, vehicle):
+        """Spawns, attaches, and starts the front-facing camera sensor."""
+        self.destroy_sensor()
+        bound_x = 0.5 + vehicle.bounding_box.extent.x
+        bound_z = 0.5 + vehicle.bounding_box.extent.z
+        transform = carla.Transform(
+            carla.Location(x=bound_x, y=0.0, z=0.8 * bound_z),
+            carla.Rotation(pitch=-2.0, yaw=0.0, roll=0.0),
+        )
+        self._spawn_camera_sensor(world, vehicle, transform)
+        self.is_streaming = True
+        self.sensor.listen(self._on_carla_image)
+        print(
+            f"\n[FrontCamera] Attached and started front camera sensor (ID:"
+            f" {self.sensor.id}, {self.width}x{self.height}@{self.fps}fps) on"
+            f" vehicle {vehicle.id} (FIFO: {self.fifo_path})",
+            flush=True,
+        )
+
+
+def _find_hero_vehicle(world):
+    fallback = None
+    for actor in world.get_actors().filter("vehicle.*"):
+        if fallback is None:
+            fallback = actor
+        if actor.attributes.get("role_name") == "hero":
+            return actor
+    return fallback
+
+
+def _run_standalone_front_camera(args):
+    """Standalone runner attaching a FrontCameraStreamer to a live CARLA hero."""
+    stop_requested = threading.Event()
+
+    def _handle_sig(_signum, _frame):
+        stop_requested.set()
+
+    signal.signal(signal.SIGINT, _handle_sig)
+    signal.signal(signal.SIGTERM, _handle_sig)
+
+    client = carla.Client(args.host, args.port)
+    client.set_timeout(15.0)
+    world = client.get_world()
+    streamer = FrontCameraStreamer(
+        fifo_path=args.fifo_path,
+        width=args.width,
+        height=args.height,
+        fps=args.fps,
+        fov=args.fov,
+    )
+    current_vehicle_id = None
+    last_log = 0.0
+    try:
+        while not stop_requested.is_set():
+            try:
+                world.wait_for_tick(5.0)
+            except RuntimeError:
+                time.sleep(0.5)
+                continue
+            vehicle = _find_hero_vehicle(world)
+            if vehicle is None:
+                if current_vehicle_id is not None:
+                    streamer.destroy_sensor()
+                    current_vehicle_id = None
+                time.sleep(1.0)
+                continue
+            if (
+                current_vehicle_id != vehicle.id
+                or streamer.sensor is None
+                or not streamer.sensor.is_alive
+            ):
+                streamer.attach_to_vehicle(world, vehicle)
+                current_vehicle_id = vehicle.id
+            now = time.time()
+            if now - last_log >= 10.0:
+                print(
+                    f"[FrontCamera] hero={current_vehicle_id}"
+                    f" frames_written={streamer.frames_written}"
+                    f" fifo={streamer.fifo_path}",
+                    flush=True,
+                )
+                last_log = now
+            stop_requested.wait(1.0)
+    finally:
+        streamer.shutdown()
+        print("[FrontCamera] Standalone streamer stopped.", flush=True)
+
+
+def _build_standalone_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Standalone CARLA front-facing camera FIFO streamer"
+    )
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=2000)
+    parser.add_argument(
+        "--fifo-path", default=DEFAULT_FRONT_CAMERA_FIFO_PATH
+    )
+    parser.add_argument("--width", type=int, default=FRONT_CAMERA_WIDTH)
+    parser.add_argument("--height", type=int, default=FRONT_CAMERA_HEIGHT)
+    parser.add_argument("--fps", type=int, default=FRONT_CAMERA_FPS)
+    parser.add_argument("--fov", type=float, default=FRONT_CAMERA_FOV)
+    return parser
+
+
+if __name__ == "__main__":
+    _run_standalone_front_camera(_build_standalone_parser().parse_args())

@@ -30,12 +30,16 @@ CAMERA_CLIENT_PATH="${SCRIPT_DIR}/external_utils/camera_display.py"
 #   --spawnCameraClient: Launches the camera display client locally.
 #   --enable-camera-stream: Streams rear-view camera to Cuttlefish virtio-media FIFO (/tmp/v4l2_fifo).
 #   --camera-fifo-path=PATH: Custom FIFO path for rear camera stream (also enables camera streaming).
+#   --enable-front-camera-stream: Streams front-facing camera continuously to Cuttlefish FIFO (/tmp/v4l2_front_fifo).
+#   --front-camera-fifo-path=PATH: Custom FIFO path for front camera stream (also enables front camera streaming).
 #   -d, --carla-dir=DIR: Custom CARLA installation directory (default: ~/Workspace/carla-installation)
 MODE=""
 RUN_BRIDGE=true
 SPAWN_CAMERA=false
 ENABLE_CAMERA_STREAM=false
 CAMERA_FIFO_PATH=""
+ENABLE_FRONT_CAMERA_STREAM=false
+FRONT_CAMERA_FIFO_PATH=""
 QUALITY="Epic"
 OPENGL=false
 REMOTE_BRIDGE=""
@@ -62,6 +66,15 @@ while [[ $# -gt 0 ]]; do
     --camera-fifo-path=*)
       CAMERA_FIFO_PATH="${1#*=}"
       ENABLE_CAMERA_STREAM=true
+      shift
+      ;;
+    --enable-front-camera-stream)
+      ENABLE_FRONT_CAMERA_STREAM=true
+      shift
+      ;;
+    --front-camera-fifo-path=*)
+      FRONT_CAMERA_FIFO_PATH="${1#*=}"
+      ENABLE_FRONT_CAMERA_STREAM=true
       shift
       ;;
     --quality=*)
@@ -99,8 +112,10 @@ while [[ $# -gt 0 ]]; do
       echo "  --quality=QUALITY           CARLA render quality (default: Epic, or Low)"
       echo "  --opengl                    Use OpenGL renderer instead of Vulkan"
       echo "  --spawnCameraClient         Launch external camera display window"
-      echo "  --enable-camera-stream      Stream rear-view camera to Cuttlefish FIFO (/tmp/v4l2_fifo)"
-      echo "  --camera-fifo-path=PATH     Custom named pipe path for rear camera stream"
+      echo "  --enable-camera-stream          Stream rear-view camera to Cuttlefish FIFO (/tmp/v4l2_fifo)"
+      echo "  --camera-fifo-path=PATH         Custom named pipe path for rear camera stream"
+      echo "  --enable-front-camera-stream    Stream front-facing camera continuously to Cuttlefish FIFO (/tmp/v4l2_front_fifo)"
+      echo "  --front-camera-fifo-path=PATH   Custom named pipe path for front camera stream"
       echo "  --doNotRunBridge            Launch CARLA simulator only without SOME/IP bridge"
       exit 0
       ;;
@@ -217,6 +232,14 @@ if [ "$RUN_BRIDGE" = true ]; then
   if [ -n "$CAMERA_FIFO_PATH" ]; then
     CAMERA_BRIDGE_ARGS+=("--camera-fifo-path=$CAMERA_FIFO_PATH")
     CAMERA_BRIDGE_ARGS_STR+=" --camera-fifo-path='$CAMERA_FIFO_PATH'"
+  fi
+  if [ "$ENABLE_FRONT_CAMERA_STREAM" = true ]; then
+    CAMERA_BRIDGE_ARGS+=("--enable-front-camera-stream")
+    CAMERA_BRIDGE_ARGS_STR+=" --enable-front-camera-stream"
+  fi
+  if [ -n "$FRONT_CAMERA_FIFO_PATH" ]; then
+    CAMERA_BRIDGE_ARGS+=("--front-camera-fifo-path=$FRONT_CAMERA_FIFO_PATH")
+    CAMERA_BRIDGE_ARGS_STR+=" --front-camera-fifo-path='$FRONT_CAMERA_FIFO_PATH'"
   fi
 
   if [ -n "$REMOTE_BRIDGE" ]; then

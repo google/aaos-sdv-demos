@@ -48,6 +48,8 @@ from typing import Tuple
 
 import carla
 from camera_streamer import DEFAULT_CAMERA_FIFO_PATH
+from camera_streamer import DEFAULT_FRONT_CAMERA_FIFO_PATH
+from camera_streamer import FrontCameraStreamer
 from camera_streamer import RearCameraStreamer
 from get_data_logic import get_ambient_light_data
 from get_data_logic import get_automatic_gear_data
@@ -296,6 +298,8 @@ class CarlaSomeipBridge:
         mode: BridgeMode = BridgeMode.Auto,
         enable_camera_stream: bool = False,
         camera_fifo_path: str = DEFAULT_CAMERA_FIFO_PATH,
+        enable_front_camera_stream: bool = False,
+        front_camera_fifo_path: str = DEFAULT_FRONT_CAMERA_FIFO_PATH,
     ):
         self.carla_host = carla_host
         self.carla_port = carla_port
@@ -309,6 +313,11 @@ class CarlaSomeipBridge:
         self.camera_streamer = (
             RearCameraStreamer(fifo_path=camera_fifo_path)
             if enable_camera_stream
+            else None
+        )
+        self.front_camera_streamer = (
+            FrontCameraStreamer(fifo_path=front_camera_fifo_path)
+            if enable_front_camera_stream
             else None
         )
 
@@ -332,6 +341,8 @@ class CarlaSomeipBridge:
         """Spawns or polls for the vehicle based on mode."""
         if self.camera_streamer is not None:
             self.camera_streamer.destroy_sensor()
+        if self.front_camera_streamer is not None:
+            self.front_camera_streamer.destroy_sensor()
 
         if self.mode == BridgeMode.Auto:
             print("Mode: Auto. Spawning new vehicle with autopilot...")
@@ -349,6 +360,10 @@ class CarlaSomeipBridge:
             self.we_spawned_vehicle = True
             if self.camera_streamer is not None:
                 self.camera_streamer.attach_to_vehicle(self.world, self.vehicle)
+            if self.front_camera_streamer is not None:
+                self.front_camera_streamer.attach_to_vehicle(
+                    self.world, self.vehicle
+                )
             return self.vehicle
 
         print(
@@ -363,6 +378,10 @@ class CarlaSomeipBridge:
                     self.we_spawned_vehicle = False
                     if self.camera_streamer is not None:
                         self.camera_streamer.attach_to_vehicle(
+                            self.world, self.vehicle
+                        )
+                    if self.front_camera_streamer is not None:
+                        self.front_camera_streamer.attach_to_vehicle(
                             self.world, self.vehicle
                         )
                     return self.vehicle
@@ -380,6 +399,8 @@ class CarlaSomeipBridge:
             self.world.apply_settings(self.original_settings)
         if self.camera_streamer is not None:
             self.camera_streamer.shutdown()
+        if self.front_camera_streamer is not None:
+            self.front_camera_streamer.shutdown()
         if self.vehicle and self.we_spawned_vehicle:
             print(f"Destroying vehicle {self.vehicle.id}")
             self.vehicle.destroy()
@@ -635,11 +656,15 @@ async def run_bridge(
     mode: BridgeMode = BridgeMode.Auto,
     enable_camera_stream: bool = False,
     camera_fifo_path: str = DEFAULT_CAMERA_FIFO_PATH,
+    enable_front_camera_stream: bool = False,
+    front_camera_fifo_path: str = DEFAULT_FRONT_CAMERA_FIFO_PATH,
 ):
     bridge = CarlaSomeipBridge(
         mode=mode,
         enable_camera_stream=enable_camera_stream,
         camera_fifo_path=camera_fifo_path,
+        enable_front_camera_stream=enable_front_camera_stream,
+        front_camera_fifo_path=front_camera_fifo_path,
     )
     service_instance = None
     sd = None
@@ -857,8 +882,18 @@ async def run_bridge(
                     cam_state = (
                         "ON" if bridge.camera_streamer.is_streaming else "IDLE"
                     )
-                    cam_str = (
+                    cam_str += (
                         f" | CAM: {cam_state}({bridge.camera_streamer.frames_written})"
+                    )
+                if bridge.front_camera_streamer is not None:
+                    fcam_state = (
+                        "ON"
+                        if bridge.front_camera_streamer.is_streaming
+                        else "IDLE"
+                    )
+                    cam_str += (
+                        f" | FCAM: {fcam_state}"
+                        f"({bridge.front_camera_streamer.frames_written})"
                     )
 
                 status_line = (
@@ -890,7 +925,7 @@ async def run_bridge(
         bridge.destroy()
 
 
-if __name__ == "__main__":
+def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="CARLA SOME/IP Bridge Client")
     parser.add_argument(
         "--mode",
@@ -907,9 +942,30 @@ if __name__ == "__main__":
         "--camera-fifo-path",
         type=str,
         default=DEFAULT_CAMERA_FIFO_PATH,
-        help="Named pipe path for camera stream (default: /tmp/v4l2_fifo)",
+        help="Named pipe path for rear camera stream (default: /tmp/v4l2_fifo)",
     )
-    args = parser.parse_args()
+    parser.add_argument(
+        "--enable-front-camera-stream",
+        action="store_true",
+        help=(
+            "Enable streaming front-facing camera on demand (only while a"
+            " reader has the host FIFO open)"
+        ),
+    )
+    parser.add_argument(
+        "--front-camera-fifo-path",
+        type=str,
+        default=DEFAULT_FRONT_CAMERA_FIFO_PATH,
+        help=(
+            "Named pipe path for front camera stream (default:"
+            " /tmp/v4l2_front_fifo)"
+        ),
+    )
+    return parser
+
+
+if __name__ == "__main__":
+    args = build_arg_parser().parse_args()
 
     selected_mode = BridgeMode.from_str(args.mode)
     asyncio.run(
@@ -917,5 +973,7 @@ if __name__ == "__main__":
             mode=selected_mode,
             enable_camera_stream=args.enable_camera_stream,
             camera_fifo_path=args.camera_fifo_path,
+            enable_front_camera_stream=args.enable_front_camera_stream,
+            front_camera_fifo_path=args.front_camera_fifo_path,
         )
     )

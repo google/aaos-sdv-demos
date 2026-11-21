@@ -30,7 +30,7 @@ CAMERA_CLIENT_PATH="${SCRIPT_DIR}/external_utils/camera_display.py"
 #   --spawnCameraClient: Launches the camera display client locally.
 #   --enable-camera-stream: Streams rear-view camera to Cuttlefish virtio-media FIFO (/tmp/v4l2_fifo).
 #   --camera-fifo-path=PATH: Custom FIFO path for rear camera stream (also enables camera streaming).
-#   --enable-front-camera-stream: Streams front-facing camera continuously to Cuttlefish FIFO (/tmp/v4l2_front_fifo).
+#   --enable-front-camera-stream: Streams front-facing camera on demand to Cuttlefish FIFO (/tmp/v4l2_front_fifo) while a reader is attached.
 #   --front-camera-fifo-path=PATH: Custom FIFO path for front camera stream (also enables front camera streaming).
 #   -d, --carla-dir=DIR: Custom CARLA installation directory (default: ~/Workspace/carla-installation)
 MODE=""
@@ -114,7 +114,7 @@ while [[ $# -gt 0 ]]; do
       echo "  --spawnCameraClient         Launch external camera display window"
       echo "  --enable-camera-stream          Stream rear-view camera to Cuttlefish FIFO (/tmp/v4l2_fifo)"
       echo "  --camera-fifo-path=PATH         Custom named pipe path for rear camera stream"
-      echo "  --enable-front-camera-stream    Stream front-facing camera continuously to Cuttlefish FIFO (/tmp/v4l2_front_fifo)"
+      echo "  --enable-front-camera-stream    Stream front-facing camera on demand to Cuttlefish FIFO (/tmp/v4l2_front_fifo)"
       echo "  --front-camera-fifo-path=PATH   Custom named pipe path for front camera stream"
       echo "  --doNotRunBridge            Launch CARLA simulator only without SOME/IP bridge"
       exit 0

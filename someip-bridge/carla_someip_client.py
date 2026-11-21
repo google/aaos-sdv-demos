@@ -948,8 +948,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--enable-front-camera-stream",
         action="store_true",
         help=(
-            "Enable streaming front-facing camera continuously to a host named"
-            " pipe (FIFO)"
+            "Enable streaming front-facing camera on demand (only while a"
+            " reader has the host FIFO open)"
         ),
     )
     parser.add_argument(

@@ -362,7 +362,9 @@ class TestCameraStreamers(unittest.TestCase):
         self.assertFalse(streamer.is_streaming)
         self.assertEqual(sensor.stop_calls, 1)
 
-    def test_front_camera_starts_continuously_on_attach(self):
+    def test_front_camera_stays_idle_until_reader_connects_and_pauses_on_close(
+        self,
+    ):
         fifo = os.path.join(self.tmpdir, "front_fifo")
         streamer = self._track(self.cs.FrontCameraStreamer(fifo_path=fifo))
         world = _FakeWorld()
@@ -371,8 +373,10 @@ class TestCameraStreamers(unittest.TestCase):
         streamer.attach_to_vehicle(world, vehicle)
         sensor = streamer.sensor
         self.assertIsNotNone(sensor)
-        self.assertTrue(streamer.is_streaming)
-        self.assertEqual(sensor.listen_calls, 1)
+        # On-demand: sensor must NOT listen while no FIFO reader is connected.
+        time.sleep(0.1)
+        self.assertFalse(streamer.is_streaming)
+        self.assertEqual(sensor.listen_calls, 0)
         # Front mount: x = +(0.5 + 1.9) = +2.4, yaw = 0, pitch = -2
         self.assertAlmostEqual(sensor.transform.location.x, 2.4)
         self.assertAlmostEqual(sensor.transform.location.z, 0.8 * (0.5 + 0.7))
@@ -383,9 +387,21 @@ class TestCameraStreamers(unittest.TestCase):
         self.assertEqual(sensor.blueprint.attributes["fov"], "90.0")
         self.assertEqual(sensor.blueprint.attributes["sensor_tick"], "0.2")
 
+        # Opening a FIFO reader wakes the CARLA sensor automatically.
+        reader_fd = os.open(fifo, os.O_RDONLY | os.O_NONBLOCK)
+        try:
+            self.assertTrue(_wait_for_condition(lambda: streamer.is_streaming))
+            self.assertEqual(sensor.listen_calls, 1)
+        finally:
+            os.close(reader_fd)
+
+        # Closing the FIFO reader stops the CARLA sensor automatically (even
+        # without any frames being emitted).
+        self.assertTrue(_wait_for_condition(lambda: not streamer.is_streaming))
+        self.assertEqual(sensor.stop_calls, 1)
+
         # Re-attaching destroys the previous sensor cleanly.
         streamer.attach_to_vehicle(world, vehicle)
-        self.assertEqual(sensor.stop_calls, 1)
         self.assertEqual(sensor.destroy_calls, 1)
         self.assertFalse(sensor.is_alive)
         self.assertIsNot(streamer.sensor, sensor)
@@ -413,8 +429,8 @@ class TestCameraStreamers(unittest.TestCase):
         reader_thread, received, errors = _read_exact_from_fifo(
             fifo, len(expected), timeout=5.0
         )
-        # Emit after opening reader so non-blocking O_WRONLY connects.
-        time.sleep(0.05)
+        # Wait for on-demand writer to detect the FIFO reader and start sensor.
+        self.assertTrue(_wait_for_condition(lambda: streamer.is_streaming))
         img = sys.modules["carla"].Image(1920, 1080, bgra.tobytes())
         streamer.sensor.emit(img)
 
@@ -422,6 +438,8 @@ class TestCameraStreamers(unittest.TestCase):
         self.assertEqual(errors, [])
         self.assertEqual(bytes(received), expected)
         self.assertTrue(_wait_for_condition(lambda: streamer.frames_written == 1))
+        # Once the reader exits, on-demand front camera returns to idle.
+        self.assertTrue(_wait_for_condition(lambda: not streamer.is_streaming))
 
     def test_front_and_rear_stream_simultaneously_without_cross_talk(self):
         rear_fifo = os.path.join(self.tmpdir, "rear_iso_fifo")
@@ -443,6 +461,7 @@ class TestCameraStreamers(unittest.TestCase):
 
         rt, rear_buf, rerr = _read_exact_from_fifo(rear_fifo, len(exp_rear))
         ft, front_buf, ferr = _read_exact_from_fifo(front_fifo, len(exp_front))
+        self.assertTrue(_wait_for_condition(lambda: front.is_streaming))
         time.sleep(0.05)
 
         rear.sensor.emit(sys.modules["carla"].Image(640, 480, rear_bgra.tobytes()))
@@ -458,7 +477,9 @@ class TestCameraStreamers(unittest.TestCase):
     def test_drops_frames_gracefully_when_no_reader_present(self):
         fifo = os.path.join(self.tmpdir, "no_reader_fifo")
         streamer = self._track(
-            self.cs.FrontCameraStreamer(fifo_path=fifo, width=4, height=4, fps=5)
+            self.cs.FrontCameraStreamer(
+                fifo_path=fifo, width=4, height=4, fps=5, on_demand=False
+            )
         )
         world = _FakeWorld()
         streamer.attach_to_vehicle(world, _FakeVehicle())
@@ -481,25 +502,23 @@ class TestCameraStreamers(unittest.TestCase):
         exp_a = self.cs.bgra_to_ym12(frame_a)
         exp_b = self.cs.bgra_to_ym12(frame_b)
 
-        # First reader receives frame A and closes.
+        # First reader receives frame A and closes -> sensor automatically stops.
         t1, buf1, _ = _read_exact_from_fifo(fifo, len(exp_a))
-        time.sleep(0.05)
+        self.assertTrue(_wait_for_condition(lambda: streamer.is_streaming))
         streamer.sensor.emit(sys.modules["carla"].Image(4, 4, frame_a.tobytes()))
         t1.join(timeout=5.0)
         self.assertEqual(bytes(buf1), exp_a)
         self.assertTrue(_wait_for_condition(lambda: streamer.frames_written == 1))
+        self.assertTrue(_wait_for_condition(lambda: not streamer.is_streaming))
 
-        # Trigger EPIPE / BrokenPipeError by emitting while no reader exists.
-        streamer.sensor.emit(sys.modules["carla"].Image(4, 4, frame_a.tobytes()))
-        time.sleep(0.15)
-
-        # Second reader opens FIFO and receives a fresh byte-0-aligned frame B.
+        # Second reader opens FIFO -> sensor automatically resumes and sends B.
         t2, buf2, _ = _read_exact_from_fifo(fifo, len(exp_b))
-        time.sleep(0.05)
+        self.assertTrue(_wait_for_condition(lambda: streamer.is_streaming))
         streamer.sensor.emit(sys.modules["carla"].Image(4, 4, frame_b.tobytes()))
         t2.join(timeout=5.0)
         self.assertEqual(bytes(buf2), exp_b)
         self.assertTrue(_wait_for_condition(lambda: streamer.frames_written == 2))
+        self.assertTrue(_wait_for_condition(lambda: not streamer.is_streaming))
 
     def test_find_hero_vehicle_preference_and_fallback(self):
         other = _FakeVehicle(actor_id=1, role_name="npc")
@@ -617,16 +636,17 @@ class TestBridgeAndLauncherIntegration(unittest.TestCase):
             both.world = world
             asyncio.run(both.acquire_vehicle())
             self.assertEqual(len(world.spawned_sensors), 2)
+            # Both cameras stay idle when no FIFO reader / reverse gear is active.
             self.assertFalse(both.camera_streamer.is_streaming)
-            self.assertTrue(both.front_camera_streamer.is_streaming)
-            # Gear change to Drive leaves rear paused, front unaffected.
+            self.assertFalse(both.front_camera_streamer.is_streaming)
+            # Gear change to Drive leaves both paused.
             both.update_camera_stream(3)
             self.assertFalse(both.camera_streamer.is_streaming)
-            self.assertTrue(both.front_camera_streamer.is_streaming)
-            # Gear change to Reverse starts rear without disturbing front.
+            self.assertFalse(both.front_camera_streamer.is_streaming)
+            # Gear change to Reverse starts rear without starting front.
             both.update_camera_stream(1)
             self.assertTrue(both.camera_streamer.is_streaming)
-            self.assertTrue(both.front_camera_streamer.is_streaming)
+            self.assertFalse(both.front_camera_streamer.is_streaming)
         finally:
             both.destroy()
 

@@ -46,6 +46,7 @@ FRONT_CAMERA_FOV = 90.0
 # Linux fcntl command to set pipe capacity (F_SETPIPE_SZ = 1031)
 F_SETPIPE_SZ = 1031
 PIPE_BUFFER_SIZE_BYTES = 1048576  # 1 MiB (matches default unprivileged pipe max)
+READER_POLL_INTERVAL_S = 0.2
 
 # Automatic gear enum value for Reverse (matches get_automatic_gear_data)
 REVERSE_GEAR_MODE = 1
@@ -101,6 +102,7 @@ class _BaseCameraFifoStreamer:
         fov: float,
         thread_name: str,
         log_tag: str,
+        on_demand: bool = False,
     ):
         if width <= 0 or height <= 0 or (width % 2) != 0 or (height % 2) != 0:
             raise ValueError(
@@ -114,6 +116,8 @@ class _BaseCameraFifoStreamer:
         self.fps = fps
         self.fov = fov
         self._log_tag = log_tag
+        self._on_demand = on_demand
+        self._sensor_lock = threading.Lock()
         self.sensor = None
         self.is_streaming = False
         self.frames_written = 0
@@ -177,32 +181,97 @@ class _BaseCameraFifoStreamer:
         except queue.Full:
             pass
 
+    def _start_sensor_listening(self) -> bool:
+        with self._sensor_lock:
+            if self.sensor is None or self.is_streaming:
+                return self.is_streaming
+            self.sensor.listen(self._on_carla_image)
+            self.is_streaming = True
+            return True
+
+    def _stop_sensor_listening(self):
+        with self._sensor_lock:
+            if self.sensor is not None and self.is_streaming:
+                try:
+                    self.sensor.stop()
+                except Exception:
+                    pass
+            self.is_streaming = False
+        self._clear_frame_queue()
+
+    def _try_open_fifo_writer(self) -> Optional[int]:
+        try:
+            fd = os.open(self.fifo_path, os.O_WRONLY | os.O_NONBLOCK)
+        except OSError:
+            # E.g. errno.ENXIO when no reader has opened the FIFO yet.
+            return None
+        try:
+            fcntl.fcntl(fd, F_SETPIPE_SZ, PIPE_BUFFER_SIZE_BYTES)
+        except OSError:
+            pass
+        print(
+            f"\n[{self._log_tag}] Connected to FIFO reader on {self.fifo_path}",
+            flush=True,
+        )
+        return fd
+
+    @staticmethod
+    def _is_fifo_reader_closed(fd: int) -> bool:
+        poller = select.poll()
+        poller.register(fd, select.POLLERR | select.POLLHUP)
+        events = poller.poll(0)
+        return any(ev & (select.POLLERR | select.POLLHUP) for _, ev in events)
+
+    def _close_fifo_writer(self, fd: Optional[int], stop_sensor: bool = False):
+        if fd is not None:
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+        if stop_sensor:
+            was_streaming = self.is_streaming
+            self._stop_sensor_listening()
+            if was_streaming:
+                print(
+                    f"\n[{self._log_tag}] FIFO reader disconnected: paused"
+                    f" camera sensor on {self.fifo_path}",
+                    flush=True,
+                )
+
     def _writer_loop(self):
         fd = None
         while not self._stop_event.is_set():
+            if self._on_demand and fd is None:
+                if self.sensor is None:
+                    self._stop_event.wait(READER_POLL_INTERVAL_S)
+                    continue
+                fd = self._try_open_fifo_writer()
+                if fd is None:
+                    self._stop_event.wait(READER_POLL_INTERVAL_S)
+                    continue
+                self._start_sensor_listening()
+            elif self._on_demand and fd is not None and not self.is_streaming:
+                if self.sensor is not None and not self._is_fifo_reader_closed(fd):
+                    self._start_sensor_listening()
+
             try:
-                image = self._frame_queue.get(timeout=0.2)
+                image = self._frame_queue.get(timeout=READER_POLL_INTERVAL_S)
             except queue.Empty:
+                if (
+                    self._on_demand
+                    and fd is not None
+                    and (self.sensor is None or self._is_fifo_reader_closed(fd))
+                ):
+                    self._close_fifo_writer(fd, stop_sensor=True)
+                    fd = None
                 continue
 
             if image is None:
                 break
 
             if fd is None:
-                try:
-                    fd = os.open(self.fifo_path, os.O_WRONLY | os.O_NONBLOCK)
-                    try:
-                        fcntl.fcntl(fd, F_SETPIPE_SZ, PIPE_BUFFER_SIZE_BYTES)
-                    except OSError:
-                        pass
-                    print(
-                        f"\n[{self._log_tag}] Connected to FIFO reader on"
-                        f" {self.fifo_path}",
-                        flush=True,
-                    )
-                except OSError:
-                    # E.g. errno.ENXIO when no reader has opened the FIFO yet
-                    fd = None
+                fd = self._try_open_fifo_writer()
+                if fd is None:
                     continue
 
             bgra = np.frombuffer(image.raw_data, dtype=np.uint8).reshape(
@@ -228,35 +297,29 @@ class _BaseCameraFifoStreamer:
                     break
 
             if write_failed:
-                try:
-                    os.close(fd)
-                except OSError:
-                    pass
+                self._close_fifo_writer(fd, stop_sensor=self._on_demand)
                 fd = None
             elif written == total_len:
                 self.frames_written += 1
 
-        if fd is not None:
-            try:
-                os.close(fd)
-            except OSError:
-                pass
+        self._close_fifo_writer(fd, stop_sensor=False)
 
     def destroy_sensor(self):
         """Stops and destroys the CARLA camera sensor actor if present."""
-        if self.sensor is not None:
-            try:
-                if self.is_streaming:
-                    self.sensor.stop()
-            except Exception:
-                pass
-            self.is_streaming = False
-            try:
-                if self.sensor.is_alive:
-                    self.sensor.destroy()
-            except Exception:
-                pass
-            self.sensor = None
+        with self._sensor_lock:
+            if self.sensor is not None:
+                try:
+                    if self.is_streaming:
+                        self.sensor.stop()
+                except Exception:
+                    pass
+                self.is_streaming = False
+                try:
+                    if self.sensor.is_alive:
+                        self.sensor.destroy()
+                except Exception:
+                    pass
+                self.sensor = None
 
     def shutdown(self):
         """Stops the background writer thread and destroys the CARLA sensor."""
@@ -326,13 +389,14 @@ class RearCameraStreamer(_BaseCameraFifoStreamer):
 
 
 class FrontCameraStreamer(_BaseCameraFifoStreamer):
-    """Streams a front-facing CARLA RGB camera continuously into a host FIFO.
+    """Streams a front-facing CARLA RGB camera on demand into a host FIFO.
 
-    Unlike RearCameraStreamer (which activates only in Reverse gear), the front
-    camera streams continuously while attached to the ego vehicle so Android
-    Automotive consumers such as the Context Buffer / Visual Intelligence
-    service receive live frames across all drive states without interfering
-    with the rear-view camera stream.
+    By default (`on_demand=True`), the CARLA camera sensor stays paused while
+    no reader has `fifo_path` open so CARLA pays zero GPU/CPU rendering cost
+    when no Android Automotive consumer (such as Argus / Context Buffer) is
+    actively streaming. As soon as a FIFO reader connects (e.g. Cuttlefish's
+    `vhu_media_v4l2_stream_proxy` on `VIDIOC_STREAMON`), the sensor starts
+    listening automatically, and stops again as soon as the reader closes.
     """
 
     def __init__(
@@ -342,6 +406,7 @@ class FrontCameraStreamer(_BaseCameraFifoStreamer):
         height: int = FRONT_CAMERA_HEIGHT,
         fps: int = FRONT_CAMERA_FPS,
         fov: float = FRONT_CAMERA_FOV,
+        on_demand: bool = True,
     ):
         super().__init__(
             fifo_path=fifo_path,
@@ -351,10 +416,11 @@ class FrontCameraStreamer(_BaseCameraFifoStreamer):
             fov=fov,
             thread_name="FrontCameraFifoWriter",
             log_tag="FrontCamera",
+            on_demand=on_demand,
         )
 
     def attach_to_vehicle(self, world, vehicle):
-        """Spawns, attaches, and starts the front-facing camera sensor."""
+        """Spawns and attaches the front-facing camera sensor."""
         self.destroy_sensor()
         bound_x = 0.5 + vehicle.bounding_box.extent.x
         bound_z = 0.5 + vehicle.bounding_box.extent.z
@@ -362,13 +428,16 @@ class FrontCameraStreamer(_BaseCameraFifoStreamer):
             carla.Location(x=bound_x, y=0.0, z=0.8 * bound_z),
             carla.Rotation(pitch=-2.0, yaw=0.0, roll=0.0),
         )
-        self._spawn_camera_sensor(world, vehicle, transform)
-        self.is_streaming = True
-        self.sensor.listen(self._on_carla_image)
+        with self._sensor_lock:
+            self._spawn_camera_sensor(world, vehicle, transform)
+            if not self._on_demand:
+                self.is_streaming = True
+                self.sensor.listen(self._on_carla_image)
+        mode_desc = "on-demand (waiting for FIFO reader)" if self._on_demand else "continuous"
         print(
-            f"\n[FrontCamera] Attached and started front camera sensor (ID:"
-            f" {self.sensor.id}, {self.width}x{self.height}@{self.fps}fps) on"
-            f" vehicle {vehicle.id} (FIFO: {self.fifo_path})",
+            f"\n[FrontCamera] Attached front camera sensor (ID:"
+            f" {self.sensor.id}, {self.width}x{self.height}@{self.fps}fps,"
+            f" {mode_desc}) on vehicle {vehicle.id} (FIFO: {self.fifo_path})",
             flush=True,
         )
 
